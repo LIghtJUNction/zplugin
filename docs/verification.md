@@ -1,7 +1,7 @@
 # Verification record
 
-Prepared 2026-11-12 (Asia/Taipei). This file separates executed checks from the
-platform matrix that is completed by GitHub Actions before publication.
+Prepared 2026-11-12 (Asia/Taipei). This file records executed local checks and the
+completed GitHub Actions platform matrix, with links to the exact tested commit.
 
 ## Baseline
 
@@ -62,9 +62,28 @@ compiler matrix. Stable jobs validate both crates' actual archives. The release
 workflow waits for this reusable matrix on its exact candidate commit before
 creating the tag and publishing.
 
-Completed remote run links and publication identities are appended after the
-matrix and registry operations return success. Before those results exist, the
-presence of a workflow alone is not recorded as a platform pass.
+The full matrix completed successfully in [CI run 43073093462](https://github.com/LIghtJUNction/zplugin/actions/runs/43073093462)
+for commit [`47ef982bdd9b0ba560732e45443b231ae7816423`](https://github.com/LIghtJUNction/zplugin/commit/47ef982bdd9b0ba560732e45443b231ae7816423).
+
+| Executed target | Rust stable 1.99.1 | Rust MSRV 1.85.0 |
+| --- | --- | --- |
+| `x86_64-unknown-linux-gnu` | Passed | Passed |
+| `aarch64-apple-darwin` | Passed | Passed |
+| `x86_64-pc-windows-msvc` | Passed | Passed |
+
+The portability job also passed, including embedded/WASM core compilation and
+four independent host/plugin compiler combinations. These are the verified native
+targets for v0.1.0; other architectures and Windows GNU are not claimed tested.
+
+Each full-feature native suite executed 15 core/runtime tests, 5 macro unit tests,
+21 compile-fail cases, 8 feature configurations, 8 real dynamic contract groups,
+and the example self-test. Two executable doctests passed; three README snippets
+requiring a separate shared crate are marked ignored and covered by the complete
+independent example crates. The 13 release transaction tests passed. All stable
+jobs also packaged and compiled both crates and completed publication dry-run.
+
+Publication uses a fresh exact-commit gate inside the release workflow; its
+outcome and immutable package identities are recorded in the GitHub Release.
 
 ## Performance evidence and limits
 
