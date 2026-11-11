@@ -1,4 +1,4 @@
-// error: mismatched types
+// error: E0308
 #[allow(non_camel_case_types)]
 type u8 = String;
 

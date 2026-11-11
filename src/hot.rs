@@ -49,9 +49,7 @@ impl Generations {
         prepare: impl FnOnce(&Rc<Plugin>) -> Result<T>,
     ) -> Result<T> {
         self.collect();
-        if self.resident_retired() >= self.max_retired {
-            return Err(Error::ResidentLimit);
-        }
+        self.reserve_slot()?;
         let candidate = match policy {
             UnloadPolicy::Pinned => match unsafe { Plugin::load(path) } {
                 Ok(plugin) => plugin,
@@ -65,17 +63,46 @@ impl Generations {
         self.replace(candidate, prepare)
     }
 
+    #[cfg(feature = "std")]
+    /// Unicode-capable counterpart of `reload` using a native filesystem path.
+    /// # Safety
+    /// The same native-code and cooperative-unload obligations as `reload` apply.
+    pub unsafe fn reload_path<T>(
+        &mut self,
+        path: impl AsRef<std::path::Path>,
+        policy: UnloadPolicy,
+        prepare: impl FnOnce(&Rc<Plugin>) -> Result<T>,
+    ) -> Result<T> {
+        self.collect();
+        self.reserve_slot()?;
+        let candidate = match unsafe { Plugin::load_path(path, policy) } {
+            Ok(plugin) => plugin,
+            Err(error) => {
+                if policy == UnloadPolicy::Pinned {
+                    self.failed_pinned += 1;
+                }
+                return Err(error);
+            }
+        };
+        self.replace(candidate, prepare)
+    }
+
+    fn reserve_slot(&mut self) -> Result<()> {
+        if self.resident_retired() >= self.max_retired {
+            return Err(Error::ResidentLimit);
+        }
+        self.retired
+            .try_reserve(1)
+            .map_err(|_| Error::ResidentLimit)
+    }
+
     /// Commit an independently loaded candidate after successful initialization.
     /// The same image (including loader path aliases) is rejected.
-    pub fn replace<T>(
+    fn replace<T>(
         &mut self,
         candidate: Plugin,
         prepare: impl FnOnce(&Rc<Plugin>) -> Result<T>,
     ) -> Result<T> {
-        self.collect();
-        if self.resident_retired() >= self.max_retired {
-            return Err(Error::ResidentLimit);
-        }
         if candidate.same_image(&self.current) {
             candidate.discard_duplicate(&self.current);
             return Err(Error::SamePath);
@@ -84,19 +111,29 @@ impl Generations {
             candidate.discard_duplicate(old);
             return Err(Error::SamePath);
         }
-        let candidate = Rc::new(candidate);
-        let prepared = match prepare(&candidate) {
-            Ok(value) => value,
-            Err(error) => {
-                // A failing closure may have exported a lease or a panicking
-                // factory may pin its image. Count it until genuinely reclaimed.
-                self.retired.push(candidate);
-                self.collect();
-                return Err(error);
+        struct Staged<'a> {
+            manager: &'a mut Generations,
+            candidate: Option<Rc<Plugin>>,
+        }
+        impl Drop for Staged<'_> {
+            fn drop(&mut self) {
+                // Capacity was reserved before loading. Also runs during unwinding
+                // in an alloc-only host; no candidate can escape resident accounting.
+                if let Some(candidate) = self.candidate.take() {
+                    self.manager.retired.push(candidate);
+                }
             }
+        }
+        let mut staged = Staged {
+            manager: self,
+            candidate: Some(Rc::new(candidate)),
         };
-        let old = core::mem::replace(&mut self.current, candidate);
-        self.retired.push(old);
+        let prepared = crate::export::catch(|| prepare(staged.candidate.as_ref().unwrap()))?;
+        let old = core::mem::replace(
+            &mut staged.manager.current,
+            staged.candidate.take().unwrap(),
+        );
+        staged.manager.retired.push(old);
         Ok(prepared)
     }
 
@@ -117,12 +154,12 @@ impl Generations {
                 Ok(plugin) => match plugin.try_close() {
                     Ok(()) => closed += 1,
                     Err((_, plugin)) => {
-                        self.retired.push(Rc::new(plugin));
+                        self.retired.insert(index, Rc::new(plugin));
                         index += 1;
                     }
                 },
                 Err(plugin) => {
-                    self.retired.push(plugin);
+                    self.retired.insert(index, plugin);
                     index += 1;
                 }
             }

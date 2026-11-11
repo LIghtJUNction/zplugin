@@ -55,6 +55,16 @@ impl Plugin {
         unsafe { Self::from_library(library, policy) }
     }
 
+    #[cfg(windows)]
+    /// Load a NUL-terminated UTF-16 path without requiring an allocator or std.
+    /// # Safety
+    /// The same native-code trust and optional cooperative obligations as `load`
+    /// and `load_cooperative` apply.
+    pub unsafe fn load_wide(path: &[u16], policy: UnloadPolicy) -> Result<Self> {
+        let library = unsafe { Library::open_wide(path)? };
+        unsafe { Self::from_library(library, policy) }
+    }
+
     #[cfg(feature = "std")]
     /// Load an OS-native path (including Unicode Windows paths).
     /// # Safety
@@ -152,7 +162,11 @@ impl Plugin {
     }
     #[cfg(feature = "hot-reload")]
     pub(crate) fn same_image(&self, other: &Self) -> bool {
-        self.descriptor == other.descriptor
+        match (&self.library, &other.library) {
+            (Some(a), Some(b)) => a.same_image(b),
+            (None, None) => self.descriptor == other.descriptor,
+            _ => false,
+        }
     }
     #[cfg(feature = "hot-reload")]
     pub(crate) fn discard_duplicate(mut self, other: &Self) {
@@ -160,7 +174,10 @@ impl Plugin {
         // SAFETY: the other owner still holds the same OS image. This only balances
         // the extra loader reference and cannot run its final unload/destructors.
         if let Some(mut library) = self.library.take() {
-            let _ = unsafe { library.close() };
+            if unsafe { library.close() }.is_err() {
+                // Retain accounting for a loader reference that could not close.
+                other.pin();
+            }
         }
     }
 
@@ -421,6 +438,8 @@ impl OwnedBytes {
     /// # Safety
     /// Own a fresh, initialized immutable buffer and a valid release callback.
     /// Its library must remain loaded until release, and the callback must not unwind.
+    /// Both data and release context must survive destruction of the originating
+    /// instance: they must not borrow instance fields or call a destroyed object.
     pub unsafe fn from_raw(raw: abi::RawBuffer) -> Result<Self> {
         abi::validate_range(raw.data, raw.len)?;
         if raw.release.is_none() {

@@ -99,6 +99,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "zplugin-contract-tests"
+version = "0.1.0"
+dependencies = [
+ "demo-interface",
+ "zplugin",
+]
+
+[[package]]
 name = "zplugin-macros"
 version = "0.1.0"
 dependencies = [

@@ -90,8 +90,13 @@ pub(crate) fn catch<T>(f: impl FnOnce() -> Result<T>) -> Result<T> {
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
             Ok(result) => result,
             Err(payload) => {
-                // A panic payload may itself panic in Drop. Do not unwind over C.
-                core::mem::forget(payload);
+                // Normal payloads are released. A payload's destructor can itself
+                // panic; catch that too and forget only the pathological payload.
+                if let Err(nested) =
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(payload)))
+                {
+                    core::mem::forget(nested);
+                }
                 Err(Error::Panicked)
             }
         }
@@ -215,6 +220,11 @@ impl<I: ExportInterface, F: Factory<Object = I::Implementation>> Registration<I,
     };
     const INTERFACES: [*const abi::InterfaceDescriptor; 1] = [&Self::INTERFACE];
 
+    /// Immutable interface metadata, for composing independent extension interfaces.
+    pub const fn interface() -> &'static abi::InterfaceDescriptor {
+        &Self::INTERFACE
+    }
+
     pub const fn pinned(version: abi::Version) -> abi::PluginDescriptor {
         abi::PluginDescriptor {
             header: abi::Header {
@@ -264,6 +274,82 @@ macro_rules! export {
                         patch: $patch,
                     },
                 );
+            #[unsafe(no_mangle)]
+            pub unsafe extern "C" fn zplugin_entry_v1() -> *const $crate::abi::Header {
+                &DESCRIPTOR.header
+            }
+        };
+    };
+}
+
+/// Export several independently versioned interfaces through one v1 entrypoint.
+/// Each constructor returns its implementation, and the cooperative policy
+/// requires every implementation to satisfy the unsafe `UnloadSafe` contract.
+/// Interface IDs must be distinct; extending a frozen table requires a new ID
+/// or a new interface version rather than changing an existing signature.
+///
+/// ```
+/// # #[cfg(feature = "macros")]
+/// # mod example {
+/// # #[zplugin::interface(id = "example.counter", version = 1)]
+/// # trait Counter { fn count(&self) -> zplugin::Result<u64>; }
+/// # struct CounterObject;
+/// # impl Counter for CounterObject { fn count(&self) -> zplugin::Result<u64> { Ok(0) } }
+/// # unsafe impl zplugin::export::UnloadSafe for CounterObject {}
+/// # fn create_counter() -> zplugin::Result<CounterObject> { Ok(CounterObject) }
+/// # #[zplugin::interface(id = "example.snapshot", version = 1)]
+/// # trait Snapshot { fn version(&self) -> zplugin::Result<u32>; }
+/// # struct SnapshotObject;
+/// # impl Snapshot for SnapshotObject { fn version(&self) -> zplugin::Result<u32> { Ok(1) } }
+/// # unsafe impl zplugin::export::UnloadSafe for SnapshotObject {}
+/// # fn create_snapshot() -> zplugin::Result<SnapshotObject> { Ok(SnapshotObject) }
+/// zplugin::export_interfaces!(version = (1, 0, 0), unload = cooperative;
+///     CounterExport<CounterObject> => create_counter,
+///     SnapshotExport<SnapshotObject> => create_snapshot,
+/// );
+/// # }
+/// ```
+#[cfg(feature = "alloc")]
+#[macro_export]
+macro_rules! export_interfaces {
+    (version = ($major:expr, $minor:expr, $patch:expr), unload = $policy:ident;
+     $first:ty => $first_constructor:path $(, $adapter:ty => $constructor:path)* $(,)?) => {
+        const _: () = {
+            const VERSION: $crate::abi::Version = $crate::abi::Version {
+                major: $major,
+                minor: $minor,
+                patch: $patch,
+            };
+            struct ZpluginFirstFactory;
+            impl $crate::export::Factory for ZpluginFirstFactory {
+                type Object = <$first as $crate::export::ExportInterface>::Implementation;
+                fn create() -> $crate::Result<Self::Object> {
+                    $first_constructor()
+                }
+            }
+            const INTERFACES: &[*const $crate::abi::InterfaceDescriptor] = &[
+                $crate::export::Registration::<$first, ZpluginFirstFactory>::interface(),
+                $({
+                    struct ZpluginFactory;
+                    impl $crate::export::Factory for ZpluginFactory {
+                        type Object = <$adapter as $crate::export::ExportInterface>::Implementation;
+                        fn create() -> $crate::Result<Self::Object> {
+                            $constructor()
+                        }
+                    }
+                    // Calling the selected policy also checks UnloadSafe for every
+                    // additional interface, not just the first one in the table.
+                    let _ = $crate::export::Registration::<$adapter, ZpluginFactory>::$policy(VERSION);
+                    $crate::export::Registration::<$adapter, ZpluginFactory>::interface()
+                }),*
+            ];
+            static DESCRIPTOR: $crate::abi::PluginDescriptor = {
+                let mut descriptor =
+                    $crate::export::Registration::<$first, ZpluginFirstFactory>::$policy(VERSION);
+                descriptor.interface_count = INTERFACES.len() as u32;
+                descriptor.interfaces = INTERFACES.as_ptr();
+                descriptor
+            };
             #[unsafe(no_mangle)]
             pub unsafe extern "C" fn zplugin_entry_v1() -> *const $crate::abi::Header {
                 &DESCRIPTOR.header

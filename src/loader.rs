@@ -13,6 +13,11 @@ pub struct Library {
 }
 
 impl Library {
+    #[cfg(feature = "hot-reload")]
+    pub(crate) fn same_image(&self, other: &Self) -> bool {
+        self.handle.is_some() && self.handle == other.handle
+    }
+
     /// Load trusted native code. Unix paths use native bytes; Windows uses its ANSI
     /// code page here. Use `open_wide` or the std path API for Unicode on Windows.
     /// # Safety

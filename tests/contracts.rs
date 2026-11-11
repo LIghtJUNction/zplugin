@@ -274,3 +274,25 @@ fn unwind_poisoning_is_per_object() {
         Error::Panicked.status()
     );
 }
+
+#[cfg(feature = "std")]
+#[test]
+fn panic_payloads_release_and_destructor_panics_stay_contained() {
+    use std::sync::Arc;
+    struct Payload(Arc<AtomicUsize>, bool);
+    impl Drop for Payload {
+        fn drop(&mut self) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            assert!(!self.1, "payload destructor panic");
+        }
+    }
+    let dropped = Arc::new(AtomicUsize::new(0));
+    for panic_on_drop in [false, true] {
+        let payload = Payload(Arc::clone(&dropped), panic_on_drop);
+        assert_eq!(
+            export::guard(|| std::panic::panic_any(payload)),
+            Error::Panicked.status()
+        );
+    }
+    assert_eq!(dropped.load(Ordering::SeqCst), 2);
+}

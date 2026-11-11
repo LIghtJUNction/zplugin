@@ -13,7 +13,7 @@ include = ["src/**", "README.md", "LICENSE-*", "docs/abi.md", "Cargo.toml", "Car
 
 [workspace]
 resolver = "2"
-members = [".", "crates/zplugin-macros", "examples/interface", "examples/plugin", "examples/host", "tools/bench"]
+members = [".", "crates/zplugin-macros", "examples/interface", "examples/plugin", "examples/host", "tools/bench", "tools/contract-tests"]
 
 [workspace.package]
 version = "0.1.0"

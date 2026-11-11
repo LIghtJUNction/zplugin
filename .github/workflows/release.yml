@@ -1,0 +1,117 @@
+name: Release
+run-name: Release ${{ inputs.bump || 'committed request' }} ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version increment; custom also resumes an existing immutable tag'
+        type: choice
+        required: true
+        default: patch
+        options: [patch, minor, major, custom]
+      version:
+        description: 'Exact SemVer, used only with custom (0.1.0 for first release)'
+        type: string
+        default: ''
+      dry_run:
+        description: 'Validate without pushing a version/tag or publishing'
+        type: boolean
+        required: true
+        default: true
+  push:
+    branches: [main]
+    paths: [.github/release-request.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zplugin-release
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.repository == 'LIghtJUNction/zplugin' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      source: ${{ steps.plan.outputs.source }}
+      candidate: ${{ steps.plan.outputs.candidate }}
+      resume: ${{ steps.plan.outputs.resume }}
+      dry_run: ${{ steps.plan.outputs.dry_run }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate the request and calculate a reproducible candidate
+        id: plan
+        env:
+          RELEASE_BUMP: ${{ inputs.bump }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            python3 scripts/release.py plan --request .github/release-request.json
+          else
+            python3 scripts/release.py plan --bump "$RELEASE_BUMP" --version "$RELEASE_VERSION" --dry-run "$RELEASE_DRY_RUN"
+          fi
+
+  validate:
+    needs: plan
+    uses: ./.github/workflows/ci.yml
+    with:
+      source: ${{ needs.plan.outputs.source }}
+      candidate: ${{ needs.plan.outputs.candidate }}
+      version: ${{ needs.plan.outputs.version }}
+
+  publish:
+    if: needs.plan.outputs.dry_run == 'false'
+    needs: [plan, validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    env:
+      RUSTUP_TOOLCHAIN: stable
+      RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+      RELEASE_SOURCE: ${{ needs.plan.outputs.source }}
+      RELEASE_CANDIDATE: ${{ needs.plan.outputs.candidate }}
+      RELEASE_RESUME: ${{ needs.plan.outputs.resume }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          fetch-depth: 0
+      - name: Reconstruct the validated commit
+        run: python3 scripts/release.py candidate --version "$RELEASE_VERSION" --source "$RELEASE_SOURCE" --expected "$RELEASE_CANDIDATE"
+      - name: Install stable Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Verify the final packaged source
+        run: python3 scripts/release.py packages --version "$RELEASE_VERSION"
+      - name: Push the validated commit and immutable tag atomically
+        run: python3 scripts/release.py push --version "$RELEASE_VERSION" --source "$RELEASE_SOURCE" --commit "$RELEASE_CANDIDATE" --resume "$RELEASE_RESUME"
+      - name: Publish dependency first and verify registry checksums
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: python3 scripts/release.py publish --version "$RELEASE_VERSION"
+      - name: Create the release in this workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 scripts/release.py finish --version "$RELEASE_VERSION" --validation-url "$VALIDATION_URL"
+      - name: Preserve resumable release state and package evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ needs.plan.outputs.version }}-${{ github.run_attempt }}
+          path: |
+            target/release-state.json
+            target/release-packages.json
+            target/release-notes.md
+            target/package/*.crate
+          if-no-files-found: ignore
+          retention-days: 30

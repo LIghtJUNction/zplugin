@@ -1,4 +1,4 @@
-// error: mismatched types
+// error: E0308
 struct OwnedBytes;
 
 impl OwnedBytes {

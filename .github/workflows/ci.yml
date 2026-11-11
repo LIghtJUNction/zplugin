@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      source:
+        type: string
+        default: ''
+      candidate:
+        type: string
+        default: ''
+      version:
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ inputs.candidate }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: '1'
+  RUSTDOCFLAGS: -D warnings
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Rust ${{ matrix.rust }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable, '1.85.0']
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.source || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Ensure deterministic source bytes
+        run: git config core.autocrlf false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Reconstruct the exact release candidate
+        if: inputs.version != ''
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_SOURCE: ${{ inputs.source }}
+          RELEASE_CANDIDATE: ${{ inputs.candidate }}
+        run: python scripts/release.py candidate --version "$RELEASE_VERSION" --source "$RELEASE_SOURCE" --expected "$RELEASE_CANDIDATE"
+      - name: Install the selected Rust version
+        env:
+          RUST_VERSION: ${{ matrix.rust }}
+        run: |
+          rustup toolchain install "$RUST_VERSION" --profile minimal --component rustfmt --component clippy
+          rustc -Vv
+          cargo -V
+      - name: Unit, integration, documentation and real cdylib tests
+        run: python scripts/check.py
+      - name: Package the interdependent release crates
+        if: matrix.rust == 'stable'
+        run: python scripts/release.py packages
+      - name: Release transaction failure-mode tests
+        if: matrix.os == 'ubuntu-latest' && matrix.rust == 'stable'
+        run: python -m unittest discover -s scripts -p 'test_release.py' -v
+
+  portability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RUSTUP_TOOLCHAIN: stable
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.source || github.sha }}
+          persist-credentials: false
+      - name: Reconstruct the exact release candidate
+        if: inputs.version != ''
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_SOURCE: ${{ inputs.source }}
+          RELEASE_CANDIDATE: ${{ inputs.candidate }}
+        run: python3 scripts/release.py candidate --version "$RELEASE_VERSION" --source "$RELEASE_SOURCE" --expected "$RELEASE_CANDIDATE"
+      - name: Install independent host/plugin toolchains
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup toolchain install 1.85.0 --profile minimal
+          rustup target add --toolchain stable thumbv7em-none-eabi wasm32-unknown-unknown
+      - name: Check allocator-free protocol targets
+        run: |
+          cargo check --locked -p zplugin --no-default-features --target thumbv7em-none-eabi
+          cargo check --locked -p zplugin --no-default-features --target wasm32-unknown-unknown
+      - name: Independently compile host and plugin with different Rust versions
+        run: python3 scripts/check.py --cross-version

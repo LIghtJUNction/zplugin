@@ -296,13 +296,12 @@ fn measure_hot(path: &Path, samples: usize) -> Result<(), Box<dyn std::error::Er
         || {
             index = 1 - index;
             // SAFETY: Both paths are copies of the reviewed cooperative fixture.
-            let next =
-                unsafe { Plugin::load_path(&paths[index], UnloadPolicy::Cooperative).unwrap() };
-            let proxy = generations
-                .replace(next, |owner| {
+            let proxy = unsafe {
+                generations.reload_path(&paths[index], UnloadPolicy::Cooperative, |owner| {
                     DemoApi::wrap(Plugin::create_owned(owner, DemoApi::SPEC)?)
                 })
-                .unwrap();
+            }
+            .unwrap();
             black_box(proxy);
             generations.collect();
         },
@@ -319,7 +318,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("usage: zplugin-bench <plugin-path>")?;
     let path = Path::new(&path);
     let samples = 41;
+    let rotation = std::env::var("ZPLUGIN_BENCH_ROTATION")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(0)
+        % 6;
     print_metadata();
+    println!("# baseline_rotation={rotation}");
+    println!(
+        "# stack_plugin_bytes={},stack_binding_bytes={},stack_instance_bytes={},stack_demo_proxy_bytes={}",
+        core::mem::size_of::<Plugin>(),
+        core::mem::size_of::<zplugin::Binding<'static>>(),
+        core::mem::size_of::<zplugin::Instance<'static>>(),
+        core::mem::size_of::<demo_interface::DemoProxy<'static>>()
+    );
     let rss_before = rss_kib();
     let first_start = Instant::now();
     // SAFETY: The benchmark loads the reviewed, cooperative example plugin.
@@ -399,49 +411,66 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut state = StaticProcessor::default();
     let args = AddArgs { a: 19, b: 23 };
     let bare_call: Call = black_box(extern_add);
-    measure("scalar/static-inline", 200_000, samples, counters, || {
-        black_box(static_add(
-            black_box(&mut state),
-            black_box(args.a),
-            black_box(args.b),
-        ));
-    });
-    measure("scalar/static-noinline", 200_000, samples, counters, || {
-        black_box(noinline_add(
-            black_box(&mut state),
-            black_box(args.a),
-            black_box(args.b),
-        ));
-    });
-    measure("scalar/cached-extern-C", 200_000, samples, counters, || {
-        raw_add(
-            bare_call,
-            (&mut state as *mut StaticProcessor).cast(),
-            black_box(args.a),
-            black_box(args.b),
-        );
-    });
-    measure(
-        "scalar/cached-generated-adapter",
-        200_000,
-        samples,
-        counters,
-        || {
-            raw_add(cached_add, object, black_box(args.a), black_box(args.b));
-        },
-    );
-    measure(
-        "scalar/libloading-cached",
-        200_000,
-        samples,
-        counters,
-        || {
-            raw_add(libloading_add, object, black_box(args.a), black_box(args.b));
-        },
-    );
-    measure("scalar/zplugin-proxy", 200_000, samples, counters, || {
-        black_box(proxy.add(black_box(args.a), black_box(args.b)).unwrap());
-    });
+    for variant in (0..6).map(|index| (index + rotation) % 6) {
+        match variant {
+            0 => {
+                measure("scalar/static-inline", 200_000, samples, counters, || {
+                    black_box(static_add(
+                        black_box(&mut state),
+                        black_box(args.a),
+                        black_box(args.b),
+                    ));
+                });
+            }
+            1 => {
+                measure("scalar/static-noinline", 200_000, samples, counters, || {
+                    black_box(noinline_add(
+                        black_box(&mut state),
+                        black_box(args.a),
+                        black_box(args.b),
+                    ));
+                });
+            }
+            2 => {
+                measure("scalar/cached-extern-C", 200_000, samples, counters, || {
+                    raw_add(
+                        bare_call,
+                        (&mut state as *mut StaticProcessor).cast(),
+                        black_box(args.a),
+                        black_box(args.b),
+                    );
+                });
+            }
+            3 => {
+                measure(
+                    "scalar/cached-generated-adapter",
+                    200_000,
+                    samples,
+                    counters,
+                    || {
+                        raw_add(cached_add, object, black_box(args.a), black_box(args.b));
+                    },
+                );
+            }
+            4 => {
+                measure(
+                    "scalar/libloading-cached",
+                    200_000,
+                    samples,
+                    counters,
+                    || {
+                        raw_add(libloading_add, object, black_box(args.a), black_box(args.b));
+                    },
+                );
+            }
+            5 => {
+                measure("scalar/zplugin-proxy", 200_000, samples, counters, || {
+                    black_box(proxy.add(black_box(args.a), black_box(args.b)).unwrap());
+                });
+            }
+            _ => unreachable!(),
+        }
+    }
     measure("latency/timer-floor", 1, 20_001, counters, || {
         black_box(());
     });
@@ -478,88 +507,105 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             4096 => 4_000,
             _ => 16,
         };
-        measure(
-            &format!("bytes-{length}/static-inline"),
-            iterations,
-            samples,
-            counters,
-            || {
-                black_box(static_transform(
-                    black_box(&mut state),
-                    black_box(&input),
-                    black_box(&mut output),
-                ));
-            },
-        );
-        measure(
-            &format!("bytes-{length}/static-noinline"),
-            iterations,
-            samples,
-            counters,
-            || {
-                black_box(noinline_transform(
-                    black_box(&mut state),
-                    black_box(&input),
-                    black_box(&mut output),
-                ));
-            },
-        );
         let bare_transform: Call = black_box(extern_transform);
-        measure(
-            &format!("bytes-{length}/cached-extern-C"),
-            iterations,
-            samples,
-            counters,
-            || {
-                raw_transform(
-                    bare_transform,
-                    (&mut state as *mut StaticProcessor).cast(),
-                    black_box(&input),
-                    black_box(&mut output),
-                );
-            },
-        );
-        measure(
-            &format!("bytes-{length}/cached-generated-adapter"),
-            iterations,
-            samples,
-            counters,
-            || {
-                raw_transform(
-                    cached_transform,
-                    object,
-                    black_box(&input),
-                    black_box(&mut output),
-                );
-            },
-        );
-        measure(
-            &format!("bytes-{length}/libloading-cached"),
-            iterations,
-            samples,
-            counters,
-            || {
-                raw_transform(
-                    libloading_transform,
-                    object,
-                    black_box(&input),
-                    black_box(&mut output),
-                );
-            },
-        );
-        measure(
-            &format!("bytes-{length}/zplugin-proxy"),
-            iterations,
-            samples,
-            counters,
-            || {
-                black_box(
-                    proxy
-                        .transform(black_box(&input), black_box(&mut output))
-                        .unwrap(),
-                );
-            },
-        );
+        for variant in (0..6).map(|index| (index + rotation) % 6) {
+            match variant {
+                0 => {
+                    measure(
+                        &format!("bytes-{length}/static-inline"),
+                        iterations,
+                        samples,
+                        counters,
+                        || {
+                            black_box(static_transform(
+                                black_box(&mut state),
+                                black_box(&input),
+                                black_box(&mut output),
+                            ));
+                        },
+                    );
+                }
+                1 => {
+                    measure(
+                        &format!("bytes-{length}/static-noinline"),
+                        iterations,
+                        samples,
+                        counters,
+                        || {
+                            black_box(noinline_transform(
+                                black_box(&mut state),
+                                black_box(&input),
+                                black_box(&mut output),
+                            ));
+                        },
+                    );
+                }
+                2 => {
+                    measure(
+                        &format!("bytes-{length}/cached-extern-C"),
+                        iterations,
+                        samples,
+                        counters,
+                        || {
+                            raw_transform(
+                                bare_transform,
+                                (&mut state as *mut StaticProcessor).cast(),
+                                black_box(&input),
+                                black_box(&mut output),
+                            );
+                        },
+                    );
+                }
+                3 => {
+                    measure(
+                        &format!("bytes-{length}/cached-generated-adapter"),
+                        iterations,
+                        samples,
+                        counters,
+                        || {
+                            raw_transform(
+                                cached_transform,
+                                object,
+                                black_box(&input),
+                                black_box(&mut output),
+                            );
+                        },
+                    );
+                }
+                4 => {
+                    measure(
+                        &format!("bytes-{length}/libloading-cached"),
+                        iterations,
+                        samples,
+                        counters,
+                        || {
+                            raw_transform(
+                                libloading_transform,
+                                object,
+                                black_box(&input),
+                                black_box(&mut output),
+                            );
+                        },
+                    );
+                }
+                5 => {
+                    measure(
+                        &format!("bytes-{length}/zplugin-proxy"),
+                        iterations,
+                        samples,
+                        counters,
+                        || {
+                            black_box(
+                                proxy
+                                    .transform(black_box(&input), black_box(&mut output))
+                                    .unwrap(),
+                            );
+                        },
+                    );
+                }
+                _ => unreachable!(),
+            }
+        }
         assert!(output.iter().all(|&value| value == b'A'));
         black_box(&output);
     }

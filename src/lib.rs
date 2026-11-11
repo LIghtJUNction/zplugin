@@ -1,5 +1,6 @@
 #![no_std]
 #![deny(unsafe_op_in_unsafe_fn)]
+#![cfg_attr(feature = "macros", doc = include_str!("../README.md"))]
 //! Native plugin primitives with a frozen C ABI and explicit library lifetimes.
 //!
 //! The default feature set needs neither `std` nor an allocator. Enable `macros`

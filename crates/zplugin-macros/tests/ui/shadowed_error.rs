@@ -1,4 +1,4 @@
-// error: mismatched types
+// error: E0308
 struct Error;
 
 #[zplugin::interface(id = "tests.shadowed-error", version = 1)]

@@ -83,7 +83,7 @@ unsafe impl zplugin::export::UnloadSafe for Processor {}
 zplugin::export!(
     DemoExport<Processor>,
     constructor = create,
-    version = (1, 0, 0),
+    version = (1, cfg!(feature = "v2") as u32, 0),
     unload = cooperative
 );
 
