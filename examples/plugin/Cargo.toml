@@ -1,0 +1,20 @@
+[package]
+name = "demo-plugin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+v2 = []
+fail-init = []
+instrument = []
+
+[dependencies]
+zplugin = { path = "../..", features = ["std", "macros"] }
+demo-interface = { path = "../interface" }
+

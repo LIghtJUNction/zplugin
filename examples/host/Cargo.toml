@@ -1,0 +1,12 @@
+[package]
+name = "demo-host"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+zplugin = { path = "../..", features = ["std", "macros", "hot-reload"] }
+demo-interface = { path = "../interface" }
+

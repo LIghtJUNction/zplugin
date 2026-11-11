@@ -1,0 +1,45 @@
+[package]
+name = "zplugin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Zero-dependency no_std native plugin ABI, loader, and generated Rust interfaces"
+readme = "README.md"
+keywords = ["plugin", "ffi", "no-std", "dynamic", "hot-reload"]
+categories = ["no-std", "api-bindings"]
+include = ["src/**", "README.md", "LICENSE-*", "docs/abi.md", "Cargo.toml", "Cargo.lock"]
+
+[workspace]
+resolver = "2"
+members = [".", "crates/zplugin-macros", "examples/interface", "examples/plugin", "examples/host", "tools/bench"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/LIghtJUNction/zplugin"
+
+[features]
+default = []
+alloc = []
+std = ["alloc"]
+macros = ["dep:zplugin-macros"]
+hot-reload = ["alloc"]
+
+[dependencies]
+zplugin-macros = { path = "crates/zplugin-macros", version = "=0.1.0", optional = true }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
