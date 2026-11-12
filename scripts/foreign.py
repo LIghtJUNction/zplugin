@@ -33,13 +33,18 @@ def run(*args, capture=False, env=None):
     print("+", " ".join(map(str, args)), flush=True)
     result = subprocess.run(list(map(str, args)), cwd=ROOT, check=True,
                             stdout=subprocess.PIPE if capture else None,
-                            text=True, env=env)
+                            text=True, encoding="utf-8", env=env)
     return result.stdout.strip() if capture else None
 
 
+def zig_target():
+    machine = platform.machine().lower()
+    architecture = {"amd64": "x86_64", "arm64": "aarch64"}.get(machine, machine)
+    return architecture + "-" + {"Linux": "linux", "Darwin": "macos", "Windows": "windows"}[OS]
+
+
 def install_zig():
-    architecture = {"AMD64": "x86_64", "arm64": "aarch64"}.get(platform.machine(), platform.machine())
-    target = architecture + "-" + {"Linux": "linux", "Darwin": "macos", "Windows": "windows"}[OS]
+    target = zig_target()
     checksum = CHECKSUMS.get(target)
     if checksum is None:
         raise SystemExit("No verified Zig archive for " + target)

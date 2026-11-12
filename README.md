@@ -5,7 +5,8 @@ proxy. zplugin uses a frozen target-platform C ABI, cached function tables, and
 explicit library lifetimes. The default runtime is `no_std`, needs no allocator,
 and has **zero third-party runtime dependencies**.
 
-The same interface also generates C/C++ headers and Zig bindings. Additive
+The same interface also generates C/C++ headers; Zig imports a module translated
+from those headers. Additive
 extension records support checked structs/enums, owned resources, callbacks,
 and cross-library tasks that the Rust host can `.await`.
 

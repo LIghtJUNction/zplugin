@@ -21,7 +21,7 @@ LABEL = re.sub(r"[^A-Za-z0-9_.-]", "_", os.environ.get("RUSTUP_TOOLCHAIN", "pinn
 
 def run(*args, env=None, capture=False):
     print("+", " ".join(map(str, args)), flush=True)
-    result = subprocess.run(list(map(str, args)), cwd=ROOT, env=env, text=True,
+    result = subprocess.run(list(map(str, args)), cwd=ROOT, env=env, text=True, encoding="utf-8",
                             stdout=subprocess.PIPE if capture else None,
                             stderr=subprocess.STDOUT if capture else None)
     if result.returncode:
@@ -59,7 +59,7 @@ def compile_fail():
         expected = source.splitlines()[0].removeprefix("// error: ")
         (case_dir / "src/main.rs").write_text(source, encoding="utf-8")
         result = subprocess.run(["cargo", "check", "--offline", "--manifest-path", str(case_dir / "Cargo.toml"),
-                                 "--target-dir", str(ROOT / ("target/ui-build-" + LABEL))], cwd=ROOT, text=True,
+                                 "--target-dir", str(ROOT / ("target/ui-build-" + LABEL))], cwd=ROOT, text=True, encoding="utf-8",
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if result.returncode == 0 or expected not in result.stdout:
             print(result.stdout)
@@ -122,7 +122,7 @@ def main():
     ui = compile_fail()
     dynamic()
     run(sys.executable, "scripts/async.py")
-    run(sys.executable, "-m", "unittest", "discover", "-s", "scripts", "-p", "test_release.py")
+    run(sys.executable, "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py")
     evidence = {"platform": platform.platform(), "rustc": run("rustc", "-Vv", capture=True).strip(),
                 "compile_fail_cases": ui, "feature_configurations": 8,
                 "elapsed_seconds": round(time.monotonic() - START, 2), "result": "pass"}
