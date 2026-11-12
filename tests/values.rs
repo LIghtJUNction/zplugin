@@ -231,3 +231,20 @@ fn enum_wire_kind_is_part_of_the_compatibility_schema() {
         core::mem::size_of::<<EmptyPayload as AbiValue>::Wire>()
     );
 }
+
+#[zplugin::interface(id = "tests.unicode-c-names", version = 1)]
+#[allow(dead_code)]
+trait Café {
+    fn r#type(&self) -> zplugin::Result<u64>;
+    fn 读取(&self) -> zplugin::Result<u64>;
+}
+
+#[test]
+fn generated_headers_escape_unicode_names_and_strip_rust_raw_prefixes() {
+    let mut header = String::new();
+    CaféApi::write_c_header(&mut header).unwrap();
+    assert!(header.is_ascii());
+    assert!(!header.contains("r#"));
+    assert!(header.contains("Caf_ue9__type_args"));
+    assert!(header.contains("Caf_ue9___u8bfb__u53d6__args"));
+}

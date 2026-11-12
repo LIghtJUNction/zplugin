@@ -5,6 +5,10 @@ proxy. zplugin uses a frozen target-platform C ABI, cached function tables, and
 explicit library lifetimes. The default runtime is `no_std`, needs no allocator,
 and has **zero third-party runtime dependencies**.
 
+The same interface also generates C/C++ headers and Zig bindings. Additive
+extension records support checked structs/enums, owned resources, callbacks,
+and cross-library tasks that the Rust host can `.await`.
+
 Rust 1.85.0 or newer; edition 2024. Development toolchain: 1.99.1, the stable
 channel available when this release was prepared. Native loading targets Linux,
 macOS, and Windows; see [verification](docs/verification.md) for tested machines
@@ -128,18 +132,66 @@ Cargo configuration, explicit snapshot/restore, and owned outputs.
 | `()` or scalar success | No output or fixed-width result record |
 | `zplugin::OwnedBytes` success | Buffer, origin release callback, independent library lease |
 | Plugin object | Opaque plugin allocation and matching destroy function |
+| `#[zplugin::abi_type]` struct or enum | Recursive C-layout record or checked tag/payload; independent of Rust layout |
+| `zplugin::OwnedResource` success | Versioned opaque resource with call/release table and independent library lease |
+| `zplugin::CallbackRef<'_>` input | Borrowed callback with explicit retain/invoke/release protocol |
+| `zplugin::OwnedTask<T>` success | Task handle with poll/cancel/release; host receives `Task<T>: Future` with `alloc` |
 
-Unsupported signatures produce compile errors: generics, async, default methods,
+Unsupported signatures produce compile errors: generics, direct `async fn`, default methods,
 associated types, conditional methods, `usize/isize`, `bool/char`, 128-bit
-integers, arbitrary structs, native `String/Vec/Box/Arc`, closures, and Futures.
-Plugin internals may use all ordinary Rust facilities and dependencies.
+integers, unannotated structs, native `String/Vec/Box/Arc`, and native Future layouts.
+Stable values require `Copy + Clone`; reference, owned, generic and array fields
+are excluded. Task outputs use `AbiValue`, including nested structs/enums and unit.
+Plugin internals may use ordinary Rust facilities and dependencies.
+
+## Asynchronous and cross-language plugins
+
+The interface declares a task factory, so borrowed input ends at the factory call:
+
+```rust
+#[zplugin::interface(id = "example.jobs", version = 1)]
+pub trait Jobs {
+    fn start(&mut self, input: u64) -> zplugin::Result<zplugin::OwnedTask<u64>>;
+}
+
+# #[cfg(feature = "alloc")]
+struct Worker;
+# #[cfg(feature = "alloc")]
+impl Jobs for Worker {
+    fn start(&mut self, input: u64) -> zplugin::Result<zplugin::OwnedTask<u64>> {
+        Ok(zplugin::OwnedTask::new(async move { Ok(input.wrapping_add(1)) }))
+    }
+}
+```
+
+The generated host proxy returns a lease-owning `Task<u64>`: use
+`jobs.start(41)?.await?`, or `cancel()` for cooperative cancellation. Polling,
+cancelling and destruction stay on the creating thread; retained wakers support
+concurrent notification. No native `Future` or `Waker` layout crosses the boundary.
+The plugin manages any runtime it needs. Dropping a future does not implicitly
+shut down an external executor; cooperative unloading requires workers and
+callback return paths to be fully joined/drained.
+
+`JobsApi::write_c_header(&mut writer)` emits the exact argument layouts, method
+signatures and descriptor helpers. C11 and C++17 include the header; Zig 0.17.1
+uses its automatically translated module. The generator itself writes through
+`core::fmt::Write` without needing an allocator.
+
+```sh
+python3 scripts/async.py
+python3 scripts/foreign.py --install-zig
+```
+
+See the [async three-crate example](examples/async), the complete
+[C/C++/Zig example](examples/foreign/README.md), and the
+[extension protocol and ownership rules](docs/extensions.md).
 
 ## Features
 
 | Feature | Additional capability | Runtime dependency |
 | --- | --- | --- |
 | default: none | ABI, native loader, borrowed instances, manual resource/factory contracts | `core` and platform loader |
-| `alloc` | Plugin factories, owning `Rc` leases, `OwnedBytes::from_vec` | Rust allocator |
+| `alloc` | Factories, `Rc` leases, owned bytes/resources, closure callbacks, Future/Waker adapters | Rust allocator |
 | `std` | Native paths, error integration, panic containment | `std`, implies `alloc` |
 | `macros` | Trait-to-ABI generation | Compilation-only macro crate |
 | `hot-reload` | Bounded generations and request leases | `alloc` |
@@ -177,8 +229,11 @@ mutable proxy. Same-object raw reentry returns `Busy` before a second borrow.
 
 Under `std` and an unwind-enabled plugin build, adapters catch Rust panics on the
 plugin side and poison that instance. `panic=abort`, foreign exceptions, and
-native crashes retain their process-level behavior. There is no async task or
-cross-boundary callback protocol in ABI v1.
+native crashes retain their process-level behavior. C++ plugins contain their
+own exceptions before returning; the C++ example includes that boundary.
+Task/callback extensions use independent size/version-prefixed tables. Failed
+resource cleanup prevents cooperative unloading, including a future or callback
+capture destructor that panics.
 
 Steady borrowed calls use cached function pointers without forced allocation,
 serialization, symbol lookup, or per-call reference counting. Actual comparisons
@@ -191,6 +246,8 @@ An inline static call remains a distinct, cheaper baseline for tiny functions.
 ```sh
 python3 scripts/check.py
 python3 scripts/check.py --cross-version
+python3 scripts/legacy.py
+python3 scripts/foreign.py --install-zig
 python3 tools/bench/run.py
 ```
 

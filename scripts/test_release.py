@@ -112,6 +112,8 @@ checksum = "preserved"
         self.assertIn('version = "2.0.100"', lock)
         self.assertIn('checksum = "preserved"', lock)
         self.assertIn('version = "0.2.0"', Path("README.md").read_text())
+        self.assertNotIn("Unreleased", Path("CHANGELOG.md").read_text())
+        self.assertEqual(release.changelog_notes("0.2.0"), "Initial implementation.")
         self.git("reset", "--hard", self.source)
         second = release.candidate("0.2.0", self.source, first)
         self.assertEqual(first, second)
@@ -122,6 +124,17 @@ checksum = "preserved"
         with self.assertRaisesRegex(ValueError, "clean checkout"):
             release.candidate("0.2.0", self.source)
         self.assertEqual(Path("README.md").read_text(), "uncommitted user work")
+
+    def test_changelog_promotes_bracketed_pending_and_preserves_history(self):
+        Path("CHANGELOG.md").write_text("# Changes\n\n## [Unreleased]\n\n- New task ABI.\n\n## [0.1.0]\n\n- Original.\n")
+        self.git("add", "CHANGELOG.md")
+        self.git("commit", "-qm", "pending changes")
+        source = self.git("rev-parse", "HEAD")
+        release.candidate("0.2.0", source)
+        self.assertEqual(release.changelog_notes("0.2.0"), "- New task ABI.")
+        self.assertEqual(release.changelog_notes("0.1.0"), "- Original.")
+        with self.assertRaisesRegex(ValueError, "missing"):
+            release.changelog_notes("0.3.0")
 
     def test_rejects_unexpected_candidate_commit(self):
         with self.assertRaisesRegex(ValueError, "differs"):

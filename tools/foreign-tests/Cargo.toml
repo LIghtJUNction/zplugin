@@ -1,0 +1,11 @@
+[package]
+name = "zplugin-foreign-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+zplugin = { path = "../..", features = ["std", "macros"] }
+foreign-interface = { path = "../../examples/foreign/interface" }

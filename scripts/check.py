@@ -99,6 +99,7 @@ def cross_version():
         for plugin in range(len(versions)):
             run(target / "debug" / ("demo-host" + EXE), output / ("plugin-" + str(plugin) + EXT), "--self-test", env=env)
     print("PASS: four independently compiled host/plugin combinations; debug and release")
+    run(sys.executable, "scripts/async.py", "--cross-version")
 
 
 def main():
@@ -120,6 +121,7 @@ def main():
         run(*command)
     ui = compile_fail()
     dynamic()
+    run(sys.executable, "scripts/async.py")
     run(sys.executable, "-m", "unittest", "discover", "-s", "scripts", "-p", "test_release.py")
     evidence = {"platform": platform.platform(), "rustc": run("rustc", "-Vv", capture=True).strip(),
                 "compile_fail_cases": ui, "feature_configurations": 8,

@@ -71,12 +71,26 @@ jobs:
           cargo -V
       - name: Unit, integration, documentation and real cdylib tests
         run: python scripts/check.py
+      - name: Generated C11, C++17 and Zig plugin integration
+        if: matrix.rust == 'stable'
+        run: python scripts/foreign.py --install-zig
       - name: Package the interdependent release crates
         if: matrix.rust == 'stable'
         run: python scripts/release.py packages
+      - name: Published v0.1.0 ABI compatibility in both directions
+        if: matrix.os == 'ubuntu-latest' && matrix.rust == 'stable'
+        run: python scripts/legacy.py
       - name: Release transaction failure-mode tests
         if: matrix.os == 'ubuntu-latest' && matrix.rust == 'stable'
         run: python -m unittest discover -s scripts -p 'test_release.py' -v
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-${{ matrix.os }}-${{ matrix.rust }}-${{ github.run_attempt }}
+          path: artifacts/*.json
+          if-no-files-found: ignore
+          retention-days: 30
 
   portability:
     runs-on: ubuntu-latest

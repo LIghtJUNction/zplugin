@@ -89,7 +89,7 @@ pub struct CallbackRef<'a> {
     _owner: PhantomData<&'a Callback>,
 }
 
-impl<'a> CallbackRef<'a> {
+impl CallbackRef<'_> {
     /// # Safety
     /// An owner keeps this reference alive for `'a`. Origin code and retained
     /// clones obey `Callback::from_raw`, including its thread and unload rules.

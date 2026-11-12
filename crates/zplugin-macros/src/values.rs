@@ -116,18 +116,44 @@ fn fields(source: &Fields) -> syn::Result<Vec<Field>> {
             };
             if matches!(
                 c_name.as_str(),
-                "auto"
+                // C11 N1570 6.4.1 and C++20 N4861 [lex.key], including
+                // alternative operator tokens. These are literal C field names.
+                "_Alignas"
+                    | "_Alignof"
+                    | "_Atomic"
+                    | "_Bool"
+                    | "_Complex"
+                    | "_Generic"
+                    | "_Imaginary"
+                    | "_Noreturn"
+                    | "_Static_assert"
+                    | "_Thread_local"
+                    | "and"
+                    | "and_eq"
+                    | "asm"
+                    | "auto"
+                    | "bitand"
+                    | "bitor"
                     | "break"
                     | "case"
                     | "char"
+                    | "char8_t"
+                    | "char16_t"
+                    | "char32_t"
+                    | "compl"
                     | "const"
+                    | "const_cast"
                     | "continue"
                     | "default"
+                    | "decltype"
                     | "do"
                     | "double"
+                    | "dynamic_cast"
                     | "else"
                     | "enum"
                     | "extern"
+                    | "explicit"
+                    | "export"
                     | "float"
                     | "for"
                     | "goto"
@@ -135,21 +161,34 @@ fn fields(source: &Fields) -> syn::Result<Vec<Field>> {
                     | "inline"
                     | "int"
                     | "long"
+                    | "mutable"
+                    | "not"
+                    | "not_eq"
+                    | "or"
+                    | "or_eq"
                     | "register"
+                    | "reinterpret_cast"
                     | "restrict"
                     | "return"
                     | "short"
                     | "signed"
                     | "sizeof"
                     | "static"
+                    | "static_assert"
+                    | "static_cast"
                     | "struct"
                     | "switch"
+                    | "thread_local"
                     | "typedef"
+                    | "typeid"
                     | "union"
                     | "unsigned"
                     | "void"
                     | "volatile"
                     | "while"
+                    | "wchar_t"
+                    | "xor"
+                    | "xor_eq"
                     | "class"
                     | "template"
                     | "typename"
@@ -576,4 +615,30 @@ fn enumeration(
             }
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_c11_and_cpp20_keyword_is_rejected_as_a_field() {
+        // Complete fixed-version keyword sets: N1570 6.4.1; N4861 [lex.key].
+        let keywords = "auto break case char const continue default do double else enum extern float for goto if inline int long register restrict return short signed sizeof static struct switch typedef union unsigned void volatile while _Alignas _Alignof _Atomic _Bool _Complex _Generic _Imaginary _Noreturn _Static_assert _Thread_local alignas alignof asm bool catch char8_t char16_t char32_t class concept consteval constexpr constinit const_cast co_await co_return co_yield decltype delete dynamic_cast explicit export false friend mutable namespace new noexcept nullptr operator private protected public reinterpret_cast requires static_assert static_cast template this thread_local throw true try typeid typename using virtual wchar_t and and_eq bitand bitor compl not not_eq or or_eq xor xor_eq";
+        for keyword in keywords.split_whitespace() {
+            let source: Item =
+                syn::parse_str(&format!("struct Value {{ r#{keyword}: u32 }}")).unwrap();
+            let arguments = syn::parse_str("id=\"tests.keywords\",version=1").unwrap();
+            let error = expand(arguments, source).unwrap_err();
+            assert!(
+                error.to_string().contains("reserved in C/C++"),
+                "{keyword}: {error}"
+            );
+        }
+        for name in ["anderson", "or_else", "longer", "Type"] {
+            let source = syn::parse_str(&format!("struct Value {{ {name}: u32 }}")).unwrap();
+            let arguments = syn::parse_str("id=\"tests.keywords\",version=1").unwrap();
+            expand(arguments, source).unwrap();
+        }
+    }
 }

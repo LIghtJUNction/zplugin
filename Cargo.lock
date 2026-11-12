@@ -3,6 +3,29 @@
 version = 4
 
 [[package]]
+name = "async-host"
+version = "0.1.0"
+dependencies = [
+ "async-interface",
+ "zplugin",
+]
+
+[[package]]
+name = "async-interface"
+version = "0.1.0"
+dependencies = [
+ "zplugin",
+]
+
+[[package]]
+name = "async-plugin"
+version = "0.1.0"
+dependencies = [
+ "async-interface",
+ "zplugin",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -28,6 +51,13 @@ name = "demo-plugin"
 version = "0.1.0"
 dependencies = [
  "demo-interface",
+ "zplugin",
+]
+
+[[package]]
+name = "foreign-interface"
+version = "0.1.0"
+dependencies = [
  "zplugin",
 ]
 
@@ -103,6 +133,14 @@ name = "zplugin-contract-tests"
 version = "0.1.0"
 dependencies = [
  "demo-interface",
+ "zplugin",
+]
+
+[[package]]
+name = "zplugin-foreign-tests"
+version = "0.1.0"
+dependencies = [
+ "foreign-interface",
  "zplugin",
 ]
 

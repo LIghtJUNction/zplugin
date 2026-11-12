@@ -572,6 +572,15 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
             _ => Err(Error::new_spanned(item, "zplugin interfaces support methods only; associated types and constants are unsupported")),
         }
     }).collect::<syn::Result<Vec<_>>>()?;
+    let mut c_methods = std::collections::BTreeSet::new();
+    for method in &methods {
+        if !c_methods.insert(c_identifier(&method.item.sig.ident)) {
+            return Err(Error::new_spanned(
+                &method.item.sig.ident,
+                "method names collide after C identifier encoding; rename one method",
+            ));
+        }
+    }
     let trait_name = &interface.ident;
     let visibility = &interface.vis;
     let api = format_ident!("{}Api", trait_name);
@@ -896,15 +905,14 @@ impl WireType {
 
 fn header_writer(trait_name: &Ident, id: &LitStr, version: u32, methods: &[Method]) -> Tokens {
     let name = c_identifier(trait_name);
-    let guard = format!(
-        "ZPLUGIN_INTERFACE_{}_{}_v{}_DEFINED",
-        name,
-        id.value()
-            .bytes()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>(),
-        version
-    );
+    let id_value = id.value();
+    let mut encoded_id = String::with_capacity(id_value.len() * 2);
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    for byte in id_value.bytes() {
+        encoded_id.push(HEX[(byte >> 4) as usize] as char);
+        encoded_id.push(HEX[(byte & 15) as usize] as char);
+    }
+    let guard = format!("ZPLUGIN_INTERFACE_{name}_{encoded_id}_v{version}_DEFINED");
     let method_count = methods.len();
     let mut dependencies = Vec::new();
     let mut declarations = Vec::new();
@@ -1043,5 +1051,34 @@ mod tests {
                 "accepted {source}"
             );
         }
+    }
+
+    #[test]
+    fn unicode_and_raw_names_generate_ascii_c_identifiers() {
+        for name in ["é", "读取", "r#type", "r#struct", "plain_name"] {
+            let ident: Ident = syn::parse_str(name).unwrap();
+            let generated = c_identifier(&ident);
+            assert!(
+                generated
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+            );
+            assert!(!generated.starts_with("r#"));
+        }
+        assert_eq!(
+            c_identifier(&syn::parse_str::<Ident>("é").unwrap()),
+            "_ue9_"
+        );
+        assert_eq!(
+            c_identifier(&syn::parse_str::<Ident>("r#type").unwrap()),
+            "type"
+        );
+        expansion("trait Example { fn 读取(&self)->zplugin::Result<u64>; fn r#type(&self)->zplugin::Result<u64>; }").unwrap();
+        let error = expansion("trait Example { fn é(&self)->zplugin::Result<u64>; fn _ue9_(&self)->zplugin::Result<u64>; }").unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("collide after C identifier encoding")
+        );
     }
 }

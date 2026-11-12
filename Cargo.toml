@@ -9,11 +9,11 @@ description = "Zero-dependency no_std native plugin ABI, loader, and generated R
 readme = "README.md"
 keywords = ["plugin", "ffi", "no-std", "dynamic", "hot-reload"]
 categories = ["no-std", "api-bindings"]
-include = ["src/**", "README.md", "LICENSE-*", "docs/abi.md", "Cargo.toml", "Cargo.lock"]
+include = ["src/**", "README.md", "LICENSE-*", "docs/abi.md", "docs/extensions.md", "Cargo.toml", "Cargo.lock"]
 
 [workspace]
 resolver = "2"
-members = [".", "crates/zplugin-macros", "examples/interface", "examples/plugin", "examples/host", "tools/bench", "tools/contract-tests"]
+members = [".", "crates/zplugin-macros", "examples/interface", "examples/plugin", "examples/host", "examples/foreign/interface", "examples/async/interface", "examples/async/plugin", "examples/async/host", "tools/foreign-tests", "tools/bench", "tools/contract-tests"]
 
 [workspace.package]
 version = "0.1.0"

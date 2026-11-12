@@ -1,7 +1,9 @@
-# Verification record
+# Verification record: v0.1.0
 
 Prepared 2026-11-12 (Asia/Taipei). This file records executed local checks and the
 completed GitHub Actions platform matrix, with links to the exact tested commit.
+This is the historical initial-release record. New extension evidence is recorded
+separately in the 0.2.0 delivery report; this file's counts refer to v0.1.0.
 
 ## Baseline
 
@@ -95,8 +97,9 @@ the included arithmetic/byte-copy examples on one shared execution host.
 Thread tests enforce a single-thread object contract, rather than claiming
 concurrent same-object use. Physical close follows the cooperative contract and
 can return Busy or leave an image pinned; the OS may retain a mapping after a
-successful loader-reference release. Async/task/waker and cross-boundary callback
-protocols are outside ABI v1. See [abi.md](abi.md) for the complete safety boundary.
+successful loader-reference release. The initial 0.1.0 package did not include
+task/waker/callback extensions. See [extensions.md](extensions.md) for the additive
+protocol introduced afterward and [abi.md](abi.md) for the base safety boundary.
 
 ## Claim review
 

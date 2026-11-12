@@ -145,10 +145,14 @@ def set_version(version, source):
         text = changelog.read_text(encoding="utf-8")
         if not re.search(r"(?m)^## \[?" + re.escape(version) + r"\]?(?:\s|$)", text):
             date = git("show", "-s", "--format=%cs", source)
-            entry = f"## [{version}] - {date}\n\nValidated workspace release; see the tagged commit, CI run, and release checksums.\n\n"
-            marker = re.search(r"(?m)^## ", text)
-            offset = marker.start() if marker else len(text)
-            text = text[:offset] + entry + text[offset:]
+            pending = re.search(r"(?mi)^## (?:\[Unreleased\]|Unreleased)[^\n]*$", text)
+            if pending:
+                text = text[:pending.start()] + f"## [{version}] - {date}" + text[pending.end():]
+            else:
+                entry = f"## [{version}] - {date}\n\nValidated workspace release; see the tagged commit, CI run, and release checksums.\n\n"
+                marker = re.search(r"(?m)^## ", text)
+                offset = marker.start() if marker else len(text)
+                text = text[:offset] + entry + text[offset:]
             changelog.write_text(text, encoding="utf-8")
     readme = Path("README.md")
     if readme.exists():
@@ -378,6 +382,15 @@ def publish(version):
     record("registry-complete", version=version, packages=data)
 
 
+def changelog_notes(version):
+    text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    heading = re.search(r"(?m)^## \[?" + re.escape(version) + r"\]?(?:\s[^\n]*)?\n", text)
+    require(heading is not None, "release version is missing from CHANGELOG.md")
+    end = re.search(r"(?m)^## ", text[heading.end():])
+    body = text[heading.end():heading.end() + end.start()] if end else text[heading.end():]
+    return body.strip()
+
+
 def finish(version, validation_url):
     data = package_hashes(version)
     for name in PACKAGES:
@@ -388,11 +401,12 @@ def finish(version, validation_url):
     rows = "\n".join(f"| [{name}](https://crates.io/crates/{name}/{version}) | `{info['sha256']}` |" for name, info in data.items())
     notes.write_text(
         f"## zplugin {version}\n\nRust-native dynamic plugin primitives using explicit C ABI tables.\n\n"
+        "### Changes\n\n" + changelog_notes(version) + "\n\n"
         f"Validated commit: `{commit}`. [Validation run]({validation_url}).\n\n"
-        "Linux, macOS and Windows compile and execute the real host/plugin contract tests. "
+        "Linux, macOS and Windows compile and execute the Rust sync/async and C/C++/Zig host/plugin contract tests. "
         "The same candidate commit passes feature checks, doctests, compile-fail diagnostics and package verification. "
         "See the repository performance report for measured numbers and environment limits.\n\n"
-        "Install: `cargo add zplugin --features std,macros,hot-reload`.\n\n"
+        f"Install: `cargo add zplugin@{version} --features std,macros,hot-reload`.\n\n"
         "| Package | SHA-256 |\n| --- | --- |\n" + rows + "\n\n"
         "See [CHANGELOG.md](https://github.com/LIghtJUNction/zplugin/blob/" + tag + "/CHANGELOG.md) "
         "and [the ABI contract](https://github.com/LIghtJUNction/zplugin/blob/" + tag + "/docs/abi.md).\n",

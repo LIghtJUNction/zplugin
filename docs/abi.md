@@ -102,6 +102,8 @@ output before copying and tests that example's unchanged-buffer behavior.
 | -5 | Caught Rust panic |
 | -6 | Previously poisoned instance |
 | -7 | Unsupported operation |
+| -8 | Task cancelled |
+| -9 | Task already completed |
 | Positive values | Application-defined errors |
 
 Other nonzero integers are preserved as `Error::PluginStatus(i32)`, so invalid
@@ -160,8 +162,9 @@ Without `std`, no catch is available; with `panic=abort`, a panic terminates the
 process. Foreign exceptions, segmentation faults, memory corruption and explicit
 process termination are outside panic containment. These behaviors follow Rust's
 [FFI unwind rules](https://doc.rust-lang.org/nomicon/ffi.html#ffi-and-unwinding).
-There is no callback/waker/task wire format in v1. Async execution may remain
-inside a plugin; a future cross-boundary protocol requires separate lifecycle tests.
+The [extension protocol](extensions.md) adds independently versioned task,
+waker, callback and resource tables. Their addition leaves the discovery header,
+interface descriptor, method slot, and existing v1 signatures unchanged.
 
 ## Cooperative close and bounded generations
 
