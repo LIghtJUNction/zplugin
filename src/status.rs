@@ -11,6 +11,8 @@ pub enum Error {
     Panicked,
     Poisoned,
     Unsupported,
+    Cancelled,
+    Completed,
     LoadFailed,
     MissingEntry,
     BadMagic,
@@ -40,6 +42,8 @@ impl Error {
             Self::Panicked => -5,
             Self::Poisoned => -6,
             Self::Unsupported => -7,
+            Self::Cancelled => -8,
+            Self::Completed => -9,
             Self::PluginStatus(n) if n != 0 => n,
             _ => -1,
         }
@@ -57,6 +61,8 @@ pub const fn status_result(status: i32) -> Result<()> {
         -5 => Err(Error::Panicked),
         -6 => Err(Error::Poisoned),
         -7 => Err(Error::Unsupported),
+        -8 => Err(Error::Cancelled),
+        -9 => Err(Error::Completed),
         n => Err(Error::PluginStatus(n)),
     }
 }

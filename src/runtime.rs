@@ -316,7 +316,7 @@ unsafe fn validate_descriptor(
     NonNull::new(ptr.cast_mut()).ok_or(Error::InvalidDescriptor)
 }
 
-enum Lease<'a> {
+pub(crate) enum Lease<'a> {
     Borrowed(&'a Plugin),
     #[cfg(feature = "alloc")]
     Shared(Rc<Plugin>),
@@ -333,7 +333,7 @@ impl Clone for Lease<'_> {
 }
 
 impl Lease<'_> {
-    fn plugin(&self) -> &Plugin {
+    pub(crate) fn plugin(&self) -> &Plugin {
         match self {
             Self::Borrowed(plugin) => plugin,
             #[cfg(feature = "alloc")]
@@ -417,6 +417,22 @@ impl<'a> Instance<'a> {
             owned,
             lease: self.lease.clone(),
         })
+    }
+
+    /// Attach this library's lifetime to a newly returned task.
+    /// # Safety
+    /// The task must be uniquely owned, originate from this plugin, and satisfy
+    /// `OwnedTask::from_raw`, including independence from this instance.
+    pub unsafe fn task<T: crate::AbiValue>(&self, raw: abi::RawTask) -> Result<crate::Task<'a, T>> {
+        unsafe { crate::task::Task::new_owned(raw, self.lease.clone()) }
+    }
+
+    /// Attach this library's lifetime to a newly returned opaque resource.
+    /// # Safety
+    /// The resource must be a fresh result from this plugin and obey
+    /// `OwnedResource::from_raw`. Its context must outlive this instance.
+    pub unsafe fn resource(&self, raw: abi::RawResource) -> Result<crate::Resource<'a>> {
+        unsafe { crate::resource::Resource::new_owned(raw, self.lease.clone()) }
     }
 }
 

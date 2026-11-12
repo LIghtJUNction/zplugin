@@ -8,6 +8,18 @@ use syn::{
     ReturnType, TraitItem, TraitItemFn, Type, parse::Parse, parse::ParseStream, parse_macro_input,
 };
 
+mod values;
+
+/// Define an explicitly versioned struct or enum with a checked C representation.
+#[proc_macro_attribute]
+pub fn abi_type(attributes: TokenStream, item: TokenStream) -> TokenStream {
+    let arguments = parse_macro_input!(attributes as InterfaceArguments);
+    let item = parse_macro_input!(item as syn::Item);
+    values::expand(arguments, item)
+        .unwrap_or_else(Error::into_compile_error)
+        .into()
+}
+
 /// Define a frozen interface, its export adapter, and its typed host proxy.
 #[proc_macro_attribute]
 pub fn interface(attributes: TokenStream, item: TokenStream) -> TokenStream {
@@ -80,6 +92,10 @@ enum WireType {
     Str,
     Unit,
     Owned,
+    Value(Type),
+    Task(Type),
+    Resource,
+    Callback,
 }
 
 impl WireType {
@@ -104,6 +120,60 @@ impl WireType {
             }
             if output && is_named_path(path, "OwnedBytes") {
                 return Ok(Self::Owned);
+            }
+            if output && is_named_path(path, "OwnedResource") {
+                return Ok(Self::Resource);
+            }
+            if output && named_generic(path, "OwnedTask") {
+                if let PathArguments::AngleBracketed(arguments) =
+                    &path.path.segments.last().unwrap().arguments
+                {
+                    if arguments.args.len() == 1 {
+                        if let GenericArgument::Type(value) = &arguments.args[0] {
+                            if !matches!(value, Type::Tuple(tuple) if tuple.elems.is_empty()) {
+                                values::value_type(value)?;
+                            }
+                            return Ok(Self::Task(value.clone()));
+                        }
+                    }
+                }
+                return Err(Error::new_spanned(
+                    ty,
+                    "OwnedTask requires one supported AbiValue output type",
+                ));
+            }
+            if !output && named_generic(path, "CallbackRef") {
+                if let PathArguments::AngleBracketed(arguments) =
+                    &path.path.segments.last().unwrap().arguments
+                {
+                    if arguments.args.len() == 1
+                        && matches!(&arguments.args[0], GenericArgument::Lifetime(lifetime) if lifetime.ident == "_")
+                    {
+                        return Ok(Self::Callback);
+                    }
+                }
+                return Err(Error::new_spanned(
+                    ty,
+                    "callback parameters use zplugin::CallbackRef<'_>; the raw argument is borrowed only for the call",
+                ));
+            }
+            if path.qself.is_none()
+                && path
+                    .path
+                    .segments
+                    .iter()
+                    .all(|s| matches!(s.arguments, PathArguments::None))
+            {
+                values::value_type(ty).map_err(|error| {
+                    Error::new_spanned(
+                        ty,
+                        format!(
+                            "unsupported zplugin {} type: {error}",
+                            if output { "return" } else { "parameter" }
+                        ),
+                    )
+                })?;
+                return Ok(Self::Value(ty.clone()));
             }
         }
         if !output {
@@ -147,6 +217,25 @@ impl WireType {
             Self::Str => "utf8".into(),
             Self::Unit => "unit".into(),
             Self::Owned => "owned_bytes_v1".into(),
+            Self::Value(_) => "value".into(),
+            Self::Task(_) => "task_v1<value>".into(),
+            Self::Resource => "owned_resource_v1".into(),
+            Self::Callback => "callback_v1".into(),
+        }
+    }
+
+    fn schema(&self) -> Tokens {
+        match self {
+            Self::Value(ty) => quote!(<#ty as ::zplugin::AbiValue>::SCHEMA),
+            Self::Task(ty) => values::concat(&[
+                quote!("task_v1<"),
+                quote!(<#ty as ::zplugin::AbiValue>::SCHEMA),
+                quote!(">"),
+            ]),
+            _ => {
+                let name = self.canonical();
+                quote!(#name)
+            }
         }
     }
 
@@ -157,6 +246,20 @@ impl WireType {
             Self::BytesMut => quote!(::zplugin::abi::BytesMut),
             Self::Unit => quote!(()),
             Self::Owned => quote!(::zplugin::abi::RawBuffer),
+            Self::Value(ty) => quote!(<#ty as ::zplugin::AbiValue>::Wire),
+            Self::Task(_) => quote!(::zplugin::abi::RawTask),
+            Self::Resource => quote!(::zplugin::abi::RawResource),
+            Self::Callback => quote!(::zplugin::abi::RawCallback),
+        }
+    }
+
+    fn argument_wire(&self) -> Tokens {
+        match self {
+            Self::Value(ty) => {
+                let ty = values::nested_type(ty).expect("validated value type");
+                quote!(<#ty as ::zplugin::AbiValue>::Wire)
+            }
+            _ => self.wire(),
         }
     }
 
@@ -168,12 +271,18 @@ impl WireType {
             Self::Str => quote!(&::core::primitive::str),
             Self::Unit => quote!(()),
             Self::Owned => quote!(::zplugin::Buffer<'__zplugin_lib>),
+            Self::Value(ty) => quote!(#ty),
+            Self::Task(ty) => quote!(::zplugin::Task<'__zplugin_lib, #ty>),
+            Self::Resource => quote!(::zplugin::Resource<'__zplugin_lib>),
+            Self::Callback => quote!(::zplugin::CallbackRef<'_>),
         }
     }
 
     fn encode(&self, name: &Ident) -> Tokens {
         match self {
             Self::Scalar(_) => quote!(#name),
+            Self::Value(ty) => quote!(<#ty as ::zplugin::AbiValue>::into_wire(#name)),
+            Self::Callback => quote!(#name.as_raw()),
             Self::Bytes | Self::Str => {
                 quote!(::zplugin::abi::Bytes { ptr: #name.as_ptr(), len: #name.len() })
             }
@@ -187,6 +296,12 @@ impl WireType {
     fn decode(&self, field: &Ident) -> Tokens {
         match self {
             Self::Scalar(_) => quote!(__zplugin_arguments.#field),
+            Self::Value(ty) => {
+                quote!(<#ty as ::zplugin::AbiValue>::from_wire(__zplugin_arguments.#field)?)
+            }
+            Self::Callback => {
+                quote!(unsafe { ::zplugin::CallbackRef::from_raw(__zplugin_arguments.#field)? })
+            }
             Self::Bytes => quote!(unsafe { __zplugin_arguments.#field.as_slice()? }),
             Self::BytesMut => quote!(unsafe { __zplugin_arguments.#field.as_mut_slice()? }),
             Self::Str => quote!(::core::str::from_utf8(unsafe {
@@ -195,6 +310,25 @@ impl WireType {
             _ => unreachable!("outputs cannot be arguments"),
         }
     }
+}
+
+fn named_generic(path: &syn::TypePath, name: &str) -> bool {
+    if path.qself.is_some() {
+        return false;
+    }
+    let names: Vec<_> = path
+        .path
+        .segments
+        .iter()
+        .map(|s| s.ident.to_string())
+        .collect();
+    (names == [name] || names == ["zplugin", name])
+        && path
+            .path
+            .segments
+            .iter()
+            .take(path.path.segments.len() - 1)
+            .all(|s| matches!(s.arguments, PathArguments::None))
 }
 
 fn is_primitive(ty: &Type, name: &str) -> bool {
@@ -236,7 +370,9 @@ struct Method {
     item: TraitItemFn,
     inputs: Vec<(Ident, WireType)>,
     output: WireType,
+    #[cfg(test)]
     signature: LitStr,
+    schema: Tokens,
 }
 
 impl Method {
@@ -367,6 +503,7 @@ impl Method {
             }
         }
         let output = WireType::parse(output_type, true)?;
+        #[cfg(test)]
         let canonical = format!(
             "v1:{}:{}({})->result<{}>",
             signature.ident.to_string().trim_start_matches("r#"),
@@ -382,11 +519,30 @@ impl Method {
                 .join(","),
             output.canonical(),
         );
+        let beginning = format!(
+            "v1:{}:{}(",
+            signature.ident.to_string().trim_start_matches("r#"),
+            if receiver.mutability.is_some() {
+                "mut"
+            } else {
+                "shared"
+            }
+        );
+        let mut parts = vec![quote!(#beginning)];
+        for (index, (_, input)) in inputs.iter().enumerate() {
+            if index != 0 {
+                parts.push(quote!(","));
+            }
+            parts.push(input.schema());
+        }
+        parts.extend([quote!(")->result<"), output.schema(), quote!(">")]);
         Ok(Self {
             item: item.clone(),
             inputs,
             output,
+            #[cfg(test)]
             signature: LitStr::new(&canonical, signature.ident.span()),
+            schema: values::concat(&parts),
         })
     }
 }
@@ -425,7 +581,8 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
     let wire_module = format_ident!("__zplugin_{}", trait_name);
     let id = arguments.id;
     let version = arguments.version;
-    let signatures: Vec<_> = methods.iter().map(|method| &method.signature).collect();
+    let signatures: Vec<_> = methods.iter().map(|method| &method.schema).collect();
+    let header = header_writer(trait_name, &id, version, &methods);
     let mut wire_structs = Vec::new();
     let mut adapter_methods = Vec::new();
     let mut method_descriptors = Vec::new();
@@ -437,14 +594,18 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
         let wire_name = format_ident!("Args_{}", name);
         let call_name = format_ident!("__call_{}", name);
         let field = format_ident!("__method_{}", name);
-        let signature = &method.signature;
+        let signature = &method.schema;
         let wire_fields: Vec<_> = method
             .inputs
             .iter()
             .enumerate()
             .map(|(i, _)| format_ident!("arg_{i}"))
             .collect();
-        let wire_types: Vec<_> = method.inputs.iter().map(|(_, ty)| ty.wire()).collect();
+        let wire_types: Vec<_> = method
+            .inputs
+            .iter()
+            .map(|(_, ty)| ty.argument_wire())
+            .collect();
         wire_structs.push(quote! {
             #[repr(C)]
             pub(super) struct #wire_name {
@@ -480,13 +641,25 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
         } else {
             quote!(::zplugin::export::check_pointer::<#output_wire>(out.cast())?;)
         };
-        let write_output = match method.output {
+        let write_output = match &method.output {
             WireType::Unit => quote!(let _ = __zplugin_value;),
             WireType::Owned => quote! {
                 // This assertion prevents a same-named user type from supplying
                 // an arbitrary raw buffer through a safe `into_raw` method.
                 let __zplugin_value: ::zplugin::OwnedBytes = __zplugin_value;
                 unsafe { out.cast::<#output_wire>().write(__zplugin_value.into_raw()); }
+            },
+            WireType::Resource => quote! {
+                let __zplugin_value: ::zplugin::OwnedResource = __zplugin_value;
+                unsafe { out.cast::<#output_wire>().write(__zplugin_value.into_raw()); }
+            },
+            WireType::Task(ty) => quote! {
+                let __zplugin_value: ::zplugin::OwnedTask<#ty> = __zplugin_value;
+                unsafe { out.cast::<#output_wire>().write(__zplugin_value.into_raw()); }
+            },
+            WireType::Value(ty) => quote! {
+                let __zplugin_value: #ty = __zplugin_value;
+                unsafe { out.cast::<#output_wire>().write(<#ty as ::zplugin::AbiValue>::into_wire(__zplugin_value)); }
             },
             _ => quote!(unsafe { out.cast::<#output_wire>().write(__zplugin_value); }),
         };
@@ -542,14 +715,22 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
             .map(|(name, ty)| ty.encode(name))
             .collect();
         let host_output = method.output.host_type();
-        let host_return = if matches!(method.output, WireType::Owned) {
-            quote!(
+        let host_return = match &method.output {
+            WireType::Owned => quote!(
                 // SAFETY: a successful call transfers one fresh owned result
                 // from this instance's plugin; buffer retains the matching lease.
                 unsafe { self.__instance.buffer(__zplugin_output.assume_init()) }
-            )
-        } else {
-            quote!(Ok(unsafe { __zplugin_output.assume_init() }))
+            ),
+            WireType::Resource => {
+                quote!(unsafe { self.__instance.resource(__zplugin_output.assume_init()) })
+            }
+            WireType::Task(ty) => {
+                quote!(unsafe { self.__instance.task::<#ty>(__zplugin_output.assume_init()) })
+            }
+            WireType::Value(ty) => {
+                quote!(<#ty as ::zplugin::AbiValue>::from_wire(unsafe { __zplugin_output.assume_init() }))
+            }
+            _ => quote!(Ok(unsafe { __zplugin_output.assume_init() })),
         };
         let docs: Vec<_> = method
             .item
@@ -583,6 +764,8 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
         #[doc(hidden)]
         #[allow(non_snake_case, non_camel_case_types)]
         mod #wire_module {
+            #[allow(unused_imports)]
+            use super::*;
             #(#wire_structs)*
         }
 
@@ -606,6 +789,12 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
         );
 
         impl #api {
+            /// Generate C/C++ declarations also importable by Zig with @cImport.
+            /// The writer may be a String or any allocation-free core::fmt::Write.
+            pub fn write_c_header(writer: &mut impl ::core::fmt::Write) -> ::core::fmt::Result {
+                #header
+            }
+
             /// Exact interface ID, version, method order, and method signatures.
             pub const SPEC: ::zplugin::InterfaceSpec = ::zplugin::InterfaceSpec {
                 id: #id,
@@ -661,6 +850,105 @@ fn expand(arguments: InterfaceArguments, interface: ItemTrait) -> syn::Result<To
             const METHODS: &'static [::zplugin::abi::Method] = &[#(#method_descriptors,)*];
         }
     })
+}
+
+fn c_identifier(name: &Ident) -> String {
+    name.to_string()
+        .trim_start_matches("r#")
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c.to_string()
+            } else {
+                format!("_u{:x}_", c as u32)
+            }
+        })
+        .collect()
+}
+
+impl WireType {
+    fn c_type(&self) -> Tokens {
+        let fixed = match self {
+            Self::Scalar(ident) => {
+                return quote!(<::core::primitive::#ident as ::zplugin::AbiValue>::C_TYPE);
+            }
+            Self::Value(ty) => return quote!(<#ty as ::zplugin::AbiValue>::C_TYPE),
+            Self::Bytes | Self::Str => "zp_bytes",
+            Self::BytesMut => "zp_bytes_mut",
+            Self::Unit => "uint8_t",
+            Self::Owned => "zp_raw_buffer",
+            Self::Task(_) => "zp_raw_task",
+            Self::Resource => "zp_raw_resource",
+            Self::Callback => "zp_raw_callback",
+        };
+        quote!(#fixed)
+    }
+
+    fn c_dependency(&self) -> Tokens {
+        match self {
+            Self::Value(ty) | Self::Task(ty) => {
+                quote!(<#ty as ::zplugin::AbiValue>::write_c(writer)?;)
+            }
+            _ => quote!(),
+        }
+    }
+}
+
+fn header_writer(trait_name: &Ident, id: &LitStr, version: u32, methods: &[Method]) -> Tokens {
+    let name = c_identifier(trait_name);
+    let guard = format!(
+        "ZPLUGIN_INTERFACE_{}_{}_v{}_DEFINED",
+        name,
+        id.value()
+            .bytes()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>(),
+        version
+    );
+    let method_count = methods.len();
+    let mut dependencies = Vec::new();
+    let mut declarations = Vec::new();
+    for method in methods {
+        let c_name = format!("{}_{}", name, c_identifier(&method.item.sig.ident));
+        let signature = &method.schema;
+        let types: Vec<_> = method.inputs.iter().map(|(_, ty)| ty.c_type()).collect();
+        let fields: Vec<_> = (0..method.inputs.len())
+            .map(|index| format!("arg_{index}"))
+            .collect();
+        let empty = method.inputs.is_empty().then(|| quote!(writer.write_str("    uint8_t _unused; /* no argument bytes are read */\n")?;));
+        let output = method.output.c_type();
+        for (_, input) in &method.inputs {
+            dependencies.push(input.c_dependency());
+        }
+        dependencies.push(method.output.c_dependency());
+        let method_macro = format!(
+            "#define {c_name}_METHOD(call) {{{{(const uint8_t*){c_name}_SIGNATURE, sizeof({c_name}_SIGNATURE)-1}}, (call)}}\n"
+        );
+        declarations.push(quote! {
+            ::core::writeln!(writer, "typedef struct {}_args {{", #c_name)?;
+            #empty
+            #(::core::writeln!(writer, "    {} {};", #types, #fields)?;)*
+            ::core::writeln!(writer, "}} {}_args;\ntypedef {} {}_out;", #c_name, #output, #c_name)?;
+            ::core::write!(writer, "#define {}_SIGNATURE ", #c_name)?;
+            ::zplugin::value::write_c_string(writer, #signature)?;
+            writer.write_str("\n")?;
+            writer.write_str(#method_macro)?;
+        });
+    }
+    let descriptor = format!(
+        "#define {name}_INTERFACE_INIT(methods, create, destroy) {{sizeof(zp_interface_descriptor), {name}_VERSION, {{(const uint8_t*){name}_ID, sizeof({name}_ID)-1}}, {name}_METHOD_COUNT, (methods), (create), (destroy)}}\n"
+    );
+    quote! {
+        ::zplugin::bindings::write_prelude(writer)?;
+        #(#dependencies)*
+        ::core::writeln!(writer, "#ifndef {}\n#define {}", #guard, #guard)?;
+        ::core::write!(writer, "#define {}_ID ", #name)?;
+        ::zplugin::value::write_c_string(writer, #id)?;
+        ::core::writeln!(writer, "\n#define {}_VERSION {}\n#define {}_METHOD_COUNT {}", #name, #version, #name, #method_count)?;
+        #(#declarations)*
+        writer.write_str(#descriptor)?;
+        writer.write_str("#endif\n")
+    }
 }
 
 #[cfg(test)]

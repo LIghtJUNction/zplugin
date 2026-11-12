@@ -3,7 +3,7 @@ use crate::{Error, Result, abi};
 #[cfg(feature = "alloc")]
 use core::marker::PhantomData;
 #[cfg(feature = "alloc")]
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use core::{
     cell::{Cell, UnsafeCell},
     ffi::c_void,
@@ -26,6 +26,15 @@ pub unsafe trait ExportInterface {
 /// reference may need this library after its last object/resource is released.
 /// Object destructors must join/cancel/unregister all such activity. Library
 /// initializers and finalizers must obey the same contract.
+///
+/// In particular, a worker/reactor that wakes or drops a retained waker must
+/// finish returning through every plugin code frame before quiescence succeeds.
+/// Join or explicitly drain those operations before releasing their last tracked
+/// resource. A zero resource count is necessary, but does not by itself establish
+/// that a concurrent final-waker destructor has returned. Generic Future
+/// cancellation drops the future; it does not shut down an arbitrary executor or
+/// join its threads. Use pinned loading unless the plugin can establish this
+/// cooperative shutdown condition, including in-flight callback return paths.
 pub unsafe trait UnloadSafe {}
 
 pub trait Factory {
@@ -145,6 +154,13 @@ pub unsafe fn with_object<T, R>(
 #[cfg(feature = "alloc")]
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
 #[cfg(feature = "alloc")]
+static FAILED_CLEANUP: AtomicBool = AtomicBool::new(false);
+#[cfg(feature = "alloc")]
+pub(crate) fn resource_failed() {
+    // A destructor that did not finish cannot establish cooperative quiescence.
+    FAILED_CLEANUP.store(true, Ordering::Release);
+}
+#[cfg(feature = "alloc")]
 pub(crate) fn resource_acquired() {
     ACTIVE.fetch_add(1, Ordering::Relaxed);
 }
@@ -172,7 +188,7 @@ unsafe extern "C" fn create<F: Factory>(out: *mut *mut c_void) -> i32 {
 }
 
 #[cfg(feature = "alloc")]
-unsafe extern "C" fn destroy<T>(ptr: *mut c_void) -> i32 {
+pub(crate) unsafe extern "C" fn destroy<T>(ptr: *mut c_void) -> i32 {
     guard(|| {
         let ptr = ptr.cast::<Object<T>>();
         check_pointer(ptr)?;
@@ -189,6 +205,9 @@ unsafe extern "C" fn destroy<T>(ptr: *mut c_void) -> i32 {
             }
             Ok(())
         });
+        if result.is_err() {
+            resource_failed();
+        }
         resource_released();
         result
     })
@@ -196,7 +215,7 @@ unsafe extern "C" fn destroy<T>(ptr: *mut c_void) -> i32 {
 
 #[cfg(feature = "alloc")]
 unsafe extern "C" fn quiesce() -> i32 {
-    if ACTIVE.load(Ordering::Acquire) == 0 {
+    if ACTIVE.load(Ordering::Acquire) == 0 && !FAILED_CLEANUP.load(Ordering::Acquire) {
         0
     } else {
         Error::Busy.status()

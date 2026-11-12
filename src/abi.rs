@@ -140,3 +140,90 @@ pub struct RawBuffer {
     pub context: *mut c_void,
     pub release: Option<Release>,
 }
+
+/// Additive extension records. These do not change any protocol-v1 descriptor.
+pub const EXTENSION_VERSION: u32 = 1;
+pub const TASK_PENDING: u32 = 0;
+pub const TASK_READY: u32 = 1;
+
+pub type TaskPoll =
+    unsafe extern "C" fn(*mut c_void, *const RawWaker, *mut c_void, *mut u32) -> i32;
+pub type WakeFn = unsafe extern "C" fn(*const c_void) -> i32;
+
+/// A borrowed view. Retain before storing; release each retained reference once.
+/// All three operations, including final release, must be thread-safe.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct RawWaker {
+    pub context: *const c_void,
+    pub vtable: *const WakerVTable,
+}
+
+#[repr(C)]
+pub struct WakerVTable {
+    pub size: u32,
+    pub abi_version: u32,
+    pub retain: Option<WakeFn>,
+    /// Wake by reference; does not consume a reference.
+    pub wake: Option<WakeFn>,
+    pub release: Option<WakeFn>,
+}
+
+/// A uniquely owned, single-threaded task. Only its waker may cross threads.
+#[repr(C)]
+pub struct RawTask {
+    pub context: *mut c_void,
+    pub vtable: *const TaskVTable,
+}
+
+#[repr(C)]
+pub struct TaskVTable {
+    pub size: u32,
+    pub abi_version: u32,
+    pub output_size: usize,
+    pub output_align: usize,
+    pub output_schema: Bytes,
+    /// Sets state on every call. Output is initialized only on READY + status 0.
+    pub poll: Option<TaskPoll>,
+    pub cancel: Option<Destroy>,
+    pub release: Option<Destroy>,
+}
+// Immutable foreign metadata; dereferencing its pointers remains unsafe.
+unsafe impl Sync for TaskVTable {}
+
+pub type ResourceCall = unsafe extern "C" fn(*mut c_void, u32, Bytes, BytesMut, *mut usize) -> i32;
+pub type CallbackCall = unsafe extern "C" fn(*mut c_void, Bytes, BytesMut, *mut usize) -> i32;
+
+#[repr(C)]
+pub struct RawResource {
+    pub context: *mut c_void,
+    pub vtable: *const ResourceVTable,
+}
+
+#[repr(C)]
+pub struct ResourceVTable {
+    pub size: u32,
+    pub abi_version: u32,
+    pub type_id: Bytes,
+    pub resource_version: u32,
+    pub call: Option<ResourceCall>,
+    pub release: Option<Destroy>,
+}
+unsafe impl Sync for ResourceVTable {}
+
+/// Copying this borrowed view does not retain its context.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct RawCallback {
+    pub context: *mut c_void,
+    pub vtable: *const CallbackVTable,
+}
+
+#[repr(C)]
+pub struct CallbackVTable {
+    pub size: u32,
+    pub abi_version: u32,
+    pub invoke: Option<CallbackCall>,
+    pub retain: Option<Destroy>,
+    pub release: Option<Destroy>,
+}
