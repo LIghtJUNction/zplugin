@@ -10,8 +10,8 @@ from those headers. Additive
 extension records support checked structs/enums, owned resources, callbacks,
 and cross-library tasks that the Rust host can `.await`.
 
-Rust 1.85.0 or newer; edition 2024. Development toolchain: 1.99.1, the stable
-channel available when this release was prepared. Native loading targets Linux,
+Rust 1.85.0 or newer; edition 2024. Development toolchain: 1.100.0, the stable
+release published on 2026-11-12. Native loading targets Linux,
 macOS, and Windows; see [verification](docs/verification.md) for tested machines
 and compiler combinations. This is a library of primitives, with no background
 watcher, runtime, transport, or plugin discovery service.

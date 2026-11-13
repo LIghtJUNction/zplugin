@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import signal
 import subprocess
 import tarfile
 import time
@@ -29,12 +30,38 @@ EXE = ".exe" if OS == "Windows" else ""
 EXT = {"Linux": ".so", "Darwin": ".dylib", "Windows": ".dll"}[OS]
 
 
-def run(*args, capture=False, env=None):
+def run(*args, capture=False, env=None, timeout=300):
     print("+", " ".join(map(str, args)), flush=True)
-    result = subprocess.run(list(map(str, args)), cwd=ROOT, check=True,
-                            stdout=subprocess.PIPE if capture else None,
-                            text=True, encoding="utf-8", env=env)
-    return result.stdout.strip() if capture else None
+    start = time.monotonic()
+    # A stalled compiler must not consume the entire platform job or leave its
+    # children running. Each command owns a separate process group on POSIX.
+    with subprocess.Popen(list(map(str, args)), cwd=ROOT,
+                          stdout=subprocess.PIPE if capture else None,
+                          text=True, encoding="utf-8", env=env,
+                          start_new_session=os.name == "posix") as child:
+        try:
+            output, _ = child.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if os.name == "posix":
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            else:
+                try:
+                    subprocess.run(["taskkill", "/PID", str(child.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   check=False, timeout=10)
+                finally:
+                    if child.poll() is None:
+                        child.kill()
+            child.communicate()
+            print(f"TIMEOUT after {timeout}s: {args[0]}", flush=True)
+            raise
+        if child.returncode:
+            raise subprocess.CalledProcessError(child.returncode, args, output=output)
+    print(f"completed in {time.monotonic() - start:.2f}s", flush=True)
+    return output.strip() if capture else None
 
 
 def zig_target():
