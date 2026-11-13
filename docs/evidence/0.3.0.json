@@ -1,0 +1,617 @@
+{
+  "schema": "zplugin-release-evidence-v1",
+  "version": "0.3.0",
+  "date": "2026-11-13",
+  "timezone": "Asia/Taipei",
+  "scope": "Opt-in untrusted Wasm sandbox. Native ABI remains trusted and unchanged.",
+  "published_at_utc": "2026-11-13T07:05:38Z",
+  "published_at_local": "2026-11-13T15:05:38+08:00",
+  "release_url": "https://github.com/LIghtJUNction/zplugin/releases/tag/v0.3.0",
+  "release_commit": "d10e9082495c8dafa2b0b0f3d19810cf5926ef02",
+  "tag": {
+    "name": "v0.3.0",
+    "object_sha": "ac90c909fca43bc40e579459a25a4d3d4119b120",
+    "commit": "d10e9082495c8dafa2b0b0f3d19810cf5926ef02"
+  },
+  "workflow": {
+    "id": 43382342689,
+    "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689",
+    "trigger_commit": "a239cc782613729c0632be3d13b43fb1932950ce",
+    "validated_candidate": "d10e9082495c8dafa2b0b0f3d19810cf5926ef02",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 131742812766,
+        "name": "plan",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742812766",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859216,
+        "name": "validate / Wasm / Rust 1.86.0",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859216",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859219,
+        "name": "validate / portability",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859219",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859302,
+        "name": "validate / macos-latest / Rust 1.85.0",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859302",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859311,
+        "name": "validate / ubuntu-latest / Rust stable",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859311",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859322,
+        "name": "validate / windows-latest / Rust 1.85.0",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859322",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859401,
+        "name": "validate / ubuntu-latest / Rust 1.85.0",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859401",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859428,
+        "name": "validate / windows-latest / Rust stable",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859428",
+        "conclusion": "success"
+      },
+      {
+        "id": 131742859463,
+        "name": "validate / macos-latest / Rust stable",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131742859463",
+        "conclusion": "success"
+      },
+      {
+        "id": 131745431310,
+        "name": "publish",
+        "url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43382342689/job/131745431310",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "packages": {
+    "zplugin": {
+      "version": "0.3.0",
+      "url": "https://crates.io/crates/zplugin/0.3.0",
+      "sha256": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e"
+    },
+    "zplugin-macros": {
+      "version": "0.3.0",
+      "url": "https://crates.io/crates/zplugin-macros/0.3.0",
+      "sha256": "87b3be200d7786220b9993f3c78fb40d2a255e4fb46b6c8451ddd01fc285725b"
+    }
+  },
+  "package_verification": "Both release artifact .crate files and subsequently downloaded Cargo registry cache .crate files match the listed SHA-256 values. Registry consumer also asserts registry-only package sources and Cargo.lock checksum; direct crates.io REST API access from this environment returned HTTP 403 and is not the source of this verification.",
+  "feature_policy": {
+    "edition": "2024",
+    "development_rust": "1.100.0",
+    "native_msrv": "1.85.0",
+    "wasm_host_msrv": "1.86.0",
+    "default_runtime_third_party_packages": 0,
+    "wasm_optional_runtime_third_party_packages": 8,
+    "wasm_guest_third_party_runtime_packages": 0,
+    "wasm_feature_implies": [
+      "alloc"
+    ],
+    "wasm_feature_does_not_imply": [
+      "std"
+    ]
+  },
+  "tests": {
+    "wasm_contract_cases": 30,
+    "compile_fail_cases": 36,
+    "python_tool_cases": 27,
+    "native_msrv_feature_combinations": 8,
+    "stable_feature_combinations": 12,
+    "real_wasm_integration_groups": 8,
+    "independent_wasm_guest_host_rust_pairs": [
+      [
+        "1.86.0",
+        "1.86.0"
+      ],
+      [
+        "1.100.0",
+        "1.100.0"
+      ],
+      [
+        "1.86.0",
+        "1.100.0"
+      ],
+      [
+        "1.100.0",
+        "1.86.0"
+      ]
+    ],
+    "counts_are_not_added_across_repeated_toolchain_runs": true
+  },
+  "ci_artifacts": [
+    {
+      "id": 14016873873,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14016873873",
+      "name": "release-0.3.0-1",
+      "sha256": "2d2c15b8a79b6d9f3870179e04eecd694d4ecd4dae04a89e0955a5b0a0a8a4cc",
+      "github_digest_verified": true,
+      "records": {
+        "release-state.json": {
+          "stage": "complete",
+          "version": "0.3.0",
+          "commit": "d10e9082495c8dafa2b0b0f3d19810cf5926ef02",
+          "tag": "v0.3.0",
+          "crate": "zplugin",
+          "packages": {
+            "zplugin-macros": {
+              "path": "target/package/zplugin-macros-0.3.0.crate",
+              "sha256": "87b3be200d7786220b9993f3c78fb40d2a255e4fb46b6c8451ddd01fc285725b"
+            },
+            "zplugin": {
+              "path": "target/package/zplugin-0.3.0.crate",
+              "sha256": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e"
+            }
+          },
+          "release_url": "https://github.com/LIghtJUNction/zplugin/releases/tag/v0.3.0"
+        },
+        "release-packages.json": {
+          "zplugin-macros": {
+            "path": "target/package/zplugin-macros-0.3.0.crate",
+            "sha256": "87b3be200d7786220b9993f3c78fb40d2a255e4fb46b6c8451ddd01fc285725b"
+          },
+          "zplugin": {
+            "path": "target/package/zplugin-0.3.0.crate",
+            "sha256": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e"
+          }
+        }
+      },
+      "package_checksums": {
+        "package/zplugin-0.3.0.crate": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e",
+        "package/zplugin-macros-0.3.0.crate": "87b3be200d7786220b9993f3c78fb40d2a255e4fb46b6c8451ddd01fc285725b"
+      }
+    },
+    {
+      "id": 14017650863,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14017650863",
+      "name": "verification-macos-latest-1.85.0-1",
+      "sha256": "ad97b58888e59c736110ab29347b536b52ecd039684b7c796d6c8b2e6ff1f476",
+      "github_digest_verified": true,
+      "records": {
+        "check-1.85.0.json": {
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: aarch64-apple-darwin\nrelease: 1.85.0\nLLVM version: 19.1.7",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "wasm_enabled": false,
+          "default_runtime_dependency_count": 0,
+          "elapsed_seconds": 60.14,
+          "result": "pass"
+        }
+      },
+      "package_checksums": {}
+    },
+    {
+      "id": 14017092481,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14017092481",
+      "name": "verification-macos-latest-stable-1",
+      "sha256": "27ff5a72d12343cad221a2c9a46714a3c34355dc1b617e8ae4c9648e3cfa5c5f",
+      "github_digest_verified": true,
+      "records": {
+        "check-stable.json": {
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: aarch64-apple-darwin\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "compile_fail_cases": 36,
+          "feature_configurations": 12,
+          "wasm_enabled": true,
+          "default_runtime_dependency_count": 0,
+          "elapsed_seconds": 63.29,
+          "result": "pass"
+        },
+        "foreign-darwin.json": {
+          "result": "pass",
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: aarch64-apple-darwin\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "zig": "0.15.2",
+          "languages": [
+            "C11",
+            "C++17",
+            "Zig"
+          ],
+          "c_compilers": {
+            "c11": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+            "c++17": "Apple clang version 21.0.0 (clang-2100.1.1.101)"
+          },
+          "contracts": [
+            "generated schema",
+            "stable struct/enum",
+            "borrowed buffers",
+            "owned bytes",
+            "owned resources",
+            "reverse callback",
+            "pending/wake/ready",
+            "cancel",
+            "library lifetime"
+          ],
+          "elapsed_seconds": 35.91
+        },
+        "wasm-stable.json": {
+          "suite": "wasm-independent-build",
+          "status": "passed",
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "guest_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: aarch64-apple-darwin\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "host_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: aarch64-apple-darwin\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "guest_target": "wasm32-unknown-unknown",
+          "guest_linear_stack_bytes": 65536,
+          "guest_bytes": 993,
+          "guest_sha256": "3417f3905d2929420e5ae30c8f81fe2b705d355e8ae001b018587318a6874875",
+          "host_checks": {
+            "suite": "wasm-rust-guest",
+            "checks": 8,
+            "status": "passed",
+            "guest_memory_bytes": 2228224
+          },
+          "elapsed_seconds": 32.387
+        }
+      },
+      "package_checksums": {}
+    },
+    {
+      "id": 14016164707,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14016164707",
+      "name": "verification-ubuntu-latest-1.85.0-1",
+      "sha256": "4e200f5a2ef453926b8fcf284269be7f0a7fd850d09021703fd4beb4045d24f0",
+      "github_digest_verified": true,
+      "records": {
+        "check-1.85.0.json": {
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: x86_64-unknown-linux-gnu\nrelease: 1.85.0\nLLVM version: 19.1.7",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "wasm_enabled": false,
+          "default_runtime_dependency_count": 0,
+          "elapsed_seconds": 36.82,
+          "result": "pass"
+        }
+      },
+      "package_checksums": {}
+    },
+    {
+      "id": 14017785738,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14017785738",
+      "name": "verification-ubuntu-latest-stable-1",
+      "sha256": "6ff8d21e2dbc1f91c1514ff01aac02b8801ebdf8417ba5869f703c905b656e9a",
+      "github_digest_verified": true,
+      "records": {
+        "check-stable.json": {
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "compile_fail_cases": 36,
+          "feature_configurations": 12,
+          "wasm_enabled": true,
+          "default_runtime_dependency_count": 0,
+          "elapsed_seconds": 41.29,
+          "result": "pass"
+        },
+        "foreign-linux.json": {
+          "result": "pass",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "zig": "0.17.1",
+          "languages": [
+            "C11",
+            "C++17",
+            "Zig"
+          ],
+          "c_compilers": {
+            "c11": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+            "c++17": "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0"
+          },
+          "contracts": [
+            "generated schema",
+            "stable struct/enum",
+            "borrowed buffers",
+            "owned bytes",
+            "owned resources",
+            "reverse callback",
+            "pending/wake/ready",
+            "cancel",
+            "library lifetime"
+          ],
+          "elapsed_seconds": 88.17
+        },
+        "wasm-stable.json": {
+          "suite": "wasm-independent-build",
+          "status": "passed",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "guest_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "host_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "guest_target": "wasm32-unknown-unknown",
+          "guest_linear_stack_bytes": 65536,
+          "guest_bytes": 993,
+          "guest_sha256": "3417f3905d2929420e5ae30c8f81fe2b705d355e8ae001b018587318a6874875",
+          "host_checks": {
+            "suite": "wasm-rust-guest",
+            "checks": 8,
+            "status": "passed",
+            "guest_memory_bytes": 2228224
+          },
+          "elapsed_seconds": 27.133
+        }
+      },
+      "package_checksums": {}
+    },
+    {
+      "id": 14016952661,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14016952661",
+      "name": "verification-wasm-msrv-1",
+      "sha256": "e4d5817aec7fd35df4ce7f5c2f7eec62d1703f71146617149b2b3e87a1159c81",
+      "github_digest_verified": true,
+      "records": {
+        "wasm-1.86.0-guest-stable.json": {
+          "suite": "wasm-independent-build",
+          "status": "passed",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "guest_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "host_rustc": "rustc 1.86.0 (05f9846f8 2025-03-31)\nbinary: rustc\ncommit-hash: 05f9846f893b09a1be1fc8560e33fc3c815cfecb\ncommit-date: 2025-03-31\nhost: x86_64-unknown-linux-gnu\nrelease: 1.86.0\nLLVM version: 19.1.7",
+          "guest_target": "wasm32-unknown-unknown",
+          "guest_linear_stack_bytes": 65536,
+          "guest_bytes": 993,
+          "guest_sha256": "3417f3905d2929420e5ae30c8f81fe2b705d355e8ae001b018587318a6874875",
+          "host_checks": {
+            "suite": "wasm-rust-guest",
+            "checks": 8,
+            "status": "passed",
+            "guest_memory_bytes": 2228224
+          },
+          "elapsed_seconds": 0.419
+        },
+        "wasm-1.86.0-host-stable.json": {
+          "suite": "wasm-independent-build",
+          "status": "passed",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "guest_rustc": "rustc 1.86.0 (05f9846f8 2025-03-31)\nbinary: rustc\ncommit-hash: 05f9846f893b09a1be1fc8560e33fc3c815cfecb\ncommit-date: 2025-03-31\nhost: x86_64-unknown-linux-gnu\nrelease: 1.86.0\nLLVM version: 19.1.7",
+          "host_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "guest_target": "wasm32-unknown-unknown",
+          "guest_linear_stack_bytes": 65536,
+          "guest_bytes": 10032,
+          "guest_sha256": "5c8b5b3108714e5b0a9f8a5508e8805d36ba3c595287e2ea037410d9b644f972",
+          "host_checks": {
+            "suite": "wasm-rust-guest",
+            "checks": 8,
+            "status": "passed",
+            "guest_memory_bytes": 2228224
+          },
+          "elapsed_seconds": 23.522
+        },
+        "wasm-1.86.0.json": {
+          "suite": "wasm-independent-build",
+          "status": "passed",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "guest_rustc": "rustc 1.86.0 (05f9846f8 2025-03-31)\nbinary: rustc\ncommit-hash: 05f9846f893b09a1be1fc8560e33fc3c815cfecb\ncommit-date: 2025-03-31\nhost: x86_64-unknown-linux-gnu\nrelease: 1.86.0\nLLVM version: 19.1.7",
+          "host_rustc": "rustc 1.86.0 (05f9846f8 2025-03-31)\nbinary: rustc\ncommit-hash: 05f9846f893b09a1be1fc8560e33fc3c815cfecb\ncommit-date: 2025-03-31\nhost: x86_64-unknown-linux-gnu\nrelease: 1.86.0\nLLVM version: 19.1.7",
+          "guest_target": "wasm32-unknown-unknown",
+          "guest_linear_stack_bytes": 65536,
+          "guest_bytes": 10032,
+          "guest_sha256": "5c8b5b3108714e5b0a9f8a5508e8805d36ba3c595287e2ea037410d9b644f972",
+          "host_checks": {
+            "suite": "wasm-rust-guest",
+            "checks": 8,
+            "status": "passed",
+            "guest_memory_bytes": 2228224
+          },
+          "elapsed_seconds": 26.541
+        }
+      },
+      "package_checksums": {}
+    },
+    {
+      "id": 14017740628,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14017740628",
+      "name": "verification-windows-latest-1.85.0-1",
+      "sha256": "e5890e82801f4e59fa27e1cb1ae2ed08bb56000132402aa7f8c4cab0bf0e727b",
+      "github_digest_verified": true,
+      "records": {
+        "check-1.85.0.json": {
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: x86_64-pc-windows-msvc\nrelease: 1.85.0\nLLVM version: 19.1.7",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "wasm_enabled": false,
+          "default_runtime_dependency_count": 0,
+          "elapsed_seconds": 70.28,
+          "result": "pass"
+        }
+      },
+      "package_checksums": {}
+    },
+    {
+      "id": 14016873746,
+      "url": "https://api.github.com/repos/LIghtJUNction/zplugin/actions/artifacts/14016873746",
+      "name": "verification-windows-latest-stable-1",
+      "sha256": "334abc8e0b71acf34379caea1280863c01d22fccd3949ca54ab14f42af29c13e",
+      "github_digest_verified": true,
+      "records": {
+        "check-stable.json": {
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-pc-windows-msvc\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "compile_fail_cases": 36,
+          "feature_configurations": 12,
+          "wasm_enabled": true,
+          "default_runtime_dependency_count": 0,
+          "elapsed_seconds": 87.06,
+          "result": "pass"
+        },
+        "foreign-windows.json": {
+          "result": "pass",
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-pc-windows-msvc\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "zig": "0.17.1",
+          "languages": [
+            "C11",
+            "C++17",
+            "Zig"
+          ],
+          "c_compilers": {
+            "c11": "clang version 22.1.8",
+            "c++17": "clang version 22.1.8"
+          },
+          "contracts": [
+            "generated schema",
+            "stable struct/enum",
+            "borrowed buffers",
+            "owned bytes",
+            "owned resources",
+            "reverse callback",
+            "pending/wake/ready",
+            "cancel",
+            "library lifetime"
+          ],
+          "elapsed_seconds": 221.28
+        },
+        "wasm-stable.json": {
+          "suite": "wasm-independent-build",
+          "status": "passed",
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "guest_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-pc-windows-msvc\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "host_rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-pc-windows-msvc\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "guest_target": "wasm32-unknown-unknown",
+          "guest_linear_stack_bytes": 65536,
+          "guest_bytes": 993,
+          "guest_sha256": "3417f3905d2929420e5ae30c8f81fe2b705d355e8ae001b018587318a6874875",
+          "host_checks": {
+            "suite": "wasm-rust-guest",
+            "checks": 8,
+            "status": "passed",
+            "guest_memory_bytes": 2228224
+          },
+          "elapsed_seconds": 46.39
+        }
+      },
+      "package_checksums": {}
+    }
+  ],
+  "registry_consumer": {
+    "result": "pass",
+    "version": "0.3.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "zplugin_checksum": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e",
+    "host_packages": [
+      {
+        "name": "bitflags",
+        "version": "2.13.2",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "libm",
+        "version": "0.2.16",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "spin",
+        "version": "0.9.9",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "wasmi",
+        "version": "2.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "wasmi_collections",
+        "version": "2.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "wasmi_core",
+        "version": "2.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "wasmi_ir",
+        "version": "2.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "wasmparser",
+        "version": "0.228.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "zplugin",
+        "version": "0.3.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      }
+    ],
+    "guest_packages": [
+      {
+        "name": "zplugin",
+        "version": "0.3.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      }
+    ],
+    "host_checksums": {
+      "bitflags": "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06",
+      "libm": "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981",
+      "spin": "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e",
+      "wasmi": "78693fcdd618e0fc34af59c6b8efa9ac5d58c68df940beff4bedddb6acfe7c27",
+      "wasmi_collections": "8a8be2aa467cf2d29e96ff759472c36eeb44a3c81c67fc9cb76c9a24c519c557",
+      "wasmi_core": "69372d5fda3ea3d1e0aa6603c7888110e0187e88ea17cd8fc2e2df0a0e1f37fa",
+      "wasmi_ir": "8f17b774caa13c618c7244f1ee51fe23c5e7b8538a471fa46d9949779758aed6",
+      "wasmparser": "4abf1132c1fdf747d56bbc1bb52152400c70f336870f968b85e89ea422198ae3",
+      "zplugin": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e"
+    },
+    "guest_checksums": {
+      "zplugin": "ea2485a9c61ce94d77f52baf55dcad088a151a7c742125f7a7c1cfee6bd07b4e"
+    },
+    "optional_third_party_runtime_packages": 8,
+    "guest_third_party_runtime_packages": 0,
+    "guest_bytes": 1016,
+    "guest_sha256": "8a7a72f8773775c156e39a4cb8fa1d2c6cf03b1b276feec6a5f1f45feed76ce4",
+    "host_checks": {
+      "suite": "wasm-rust-guest",
+      "checks": 8,
+      "status": "passed",
+      "guest_memory_bytes": 3211264
+    },
+    "elapsed_seconds": 35.477,
+    "evidence_sha256": "1d23d52f7918afeead62481ee0af8ac2e01822c67544cecbf12c3f31b1c71915",
+    "archive_name": "wasm-registry-consumer-0.3.0.tar.gz",
+    "archive_sha256": "1a023e8c9564926031c67f978ad445b32b01cdbf3b69a8e05811816c9215e342",
+    "archive_bytes": 10921
+  },
+  "performance": {
+    "source_commit": "e957b45e6f9a071a8ce3030fd75d3ca34334c71b",
+    "report": "docs/performance-0.3.0.md",
+    "raw_evidence": "docs/benchmarks/v0.3.0/evidence.json",
+    "processes": 3,
+    "batches_per_case": 31,
+    "statistic": "median of three process p50s of batch-mean times; not individual-call tail latency",
+    "warmed_rust_allocations": 0,
+    "wasm_calls_are_not_zero_copy": true,
+    "guest_linear_memory_bytes": 2228224,
+    "retained_requested_live_bytes": 2247430,
+    "measures_process_rss": false
+  },
+  "support_boundaries": [
+    "Only zplugin Wasm v1 import-free core Wasm32 modules; no WASI, JavaScript imports or Component Model",
+    "Synchronous byte-buffer Wasm calls; native async/tasks/wakers/callbacks/trait ABI are not bridged",
+    "Native loading is not sandboxed",
+    "Guest linear memory cap is not total process RSS cap",
+    "Fuel is not a wall-clock validation/compilation deadline",
+    "Engine correctness, host allocator/OOM and hardware side channels remain outside this adapter's isolation guarantee",
+    "Reused instances can retain prior input; new instances are required for isolated confidential sessions",
+    "No independent security audit claimed"
+  ],
+  "drive_folder": "https://drive.google.com/drive/folders/1LBJZoXa6T7_x_JcR3bOaA_KgWxAQfzx2"
+}

@@ -36,7 +36,7 @@ its store on one thread, uses the same Wasmi 2.0 engine, finite fuel,
 memory/table/stack limits, scratch negotiation, zeroing, copies and lifecycle.
 zplugin adds its public error handling, size checks and poisoning. Benchmark
 baseline errors abort the benchmark, so it is not a replacement safe loader API.
-All comparisons below are successful calls with already-bound instances.
+Steady-state call comparisons use successful calls with already-bound instances.
 
 Quantiles apply to per-batch mean nanoseconds per operation. They use
 `sorted[floor(p × (n − 1))]`, with `n = 31`. The headline value is the median of
