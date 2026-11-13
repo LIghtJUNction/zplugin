@@ -48,7 +48,8 @@ def main():
         toolchain=options.guest_toolchain)
     run("rustc", "--edition=2024", "--crate-type=cdylib", "--crate-name=zplugin_wasm_demo",
         "--target=wasm32-unknown-unknown", "-Copt-level=3", "-Cpanic=abort",
-        "-Ccodegen-units=1", "-Clto=thin", "--extern", "zplugin=" + str(sdk / "libzplugin.rlib"),
+        "-Ccodegen-units=1", "-Clto=thin", "-Clink-arg=-zstack-size=65536",
+        "--extern", "zplugin=" + str(sdk / "libzplugin.rlib"),
         "-L", "dependency=" + str(sdk / "deps"),
         ROOT / "examples/wasm/guest.rs", "-o", guest,
         toolchain=options.guest_toolchain)
@@ -60,6 +61,7 @@ def main():
     evidence = {"suite": "wasm-independent-build", "status": "passed",
                 "platform": platform.platform(), "guest_rustc": guest_rust,
                 "host_rustc": host_rust, "guest_target": "wasm32-unknown-unknown",
+                "guest_linear_stack_bytes": 65_536,
                 "guest_bytes": guest.stat().st_size,
                 "guest_sha256": hashlib.sha256(guest.read_bytes()).hexdigest(),
                 "host_checks": host_evidence,

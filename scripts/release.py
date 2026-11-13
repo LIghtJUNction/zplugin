@@ -400,16 +400,20 @@ def finish(version, validation_url):
     notes = Path("target/release-notes.md")
     rows = "\n".join(f"| [{name}](https://crates.io/crates/{name}/{version}) | `{info['sha256']}` |" for name, info in data.items())
     notes.write_text(
-        f"## zplugin {version}\n\nRust-native dynamic plugin primitives using explicit C ABI tables.\n\n"
+        f"## zplugin {version}\n\nNative plugin ABI primitives and an opt-in untrusted Wasm sandbox.\n\n"
         "### Changes\n\n" + changelog_notes(version) + "\n\n"
         f"Validated commit: `{commit}`. [Validation run]({validation_url}).\n\n"
         "Linux, macOS and Windows compile and execute the Rust sync/async and C/C++/Zig host/plugin contract tests. "
+        "The same native hosts execute independently compiled Wasm plugins; the optional engine is checked on Rust 1.86 and no_std targets. "
         "The same candidate commit passes feature checks, doctests, compile-fail diagnostics and package verification. "
         "See the repository performance report for measured numbers and environment limits.\n\n"
         f"Install: `cargo add zplugin@{version} --features std,macros,hot-reload`.\n\n"
+        f"For untrusted Wasm plugins: `cargo add zplugin@{version} --features wasm`. "
+        "The default native runtime remains zero-dependency; the optional Wasm backend uses Wasmi.\n\n"
         "| Package | SHA-256 |\n| --- | --- |\n" + rows + "\n\n"
         "See [CHANGELOG.md](https://github.com/LIghtJUNction/zplugin/blob/" + tag + "/CHANGELOG.md) "
-        "and [the ABI contract](https://github.com/LIghtJUNction/zplugin/blob/" + tag + "/docs/abi.md).\n",
+        "[the native ABI](https://github.com/LIghtJUNction/zplugin/blob/" + tag + "/docs/abi.md), "
+        "and [Wasm isolation and limits](https://github.com/LIghtJUNction/zplugin/blob/" + tag + "/docs/wasm.md).\n",
         encoding="utf-8")
     existing = run("gh", "release", "view", tag, "--repo", REPOSITORY, "--json", "tagName,isDraft,url", check=False)
     if existing.returncode == 0:

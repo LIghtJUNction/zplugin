@@ -40,6 +40,10 @@ zplugin dependency, and `panic = "abort"`. Compile with
 its own panic handler and, only if needed, allocator. A guest can also use Rust
 `std` facilities that work without imports; unsupported I/O/WASI imports are
 rejected at load. The example has no allocator and traps on panic.
+Its build script sets a 64 KiB guest linear-memory stack with
+`-C link-arg=-zstack-size=65536`. This is a size choice for this small example,
+independent of the host interpreter-stack limit; applications choose an adequate
+guest stack for their own code. Scratch capacities are also compile-time choices.
 
 The [host example](../examples/wasm_host.rs) reads at most the module-size limit
 plus one byte, calls the safe `wasm::Plugin::new(bytes, interface, limits)`, and
