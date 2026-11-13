@@ -14,6 +14,8 @@ The script downloads the official Zig archive into `target/`, verifies its pinne
 
 The macOS pin is a compiler compatibility choice. Zig 0.17.1's native macOS `translate-c` exceeded the 300-second command deadline [in CI](https://github.com/LIghtJUNction/zplugin/actions/runs/43374671134/job/131718250206), before any Zig plugin could be built or loaded. This is a translation-stage failure, not a failing plugin ABI assertion. The macOS job still generates declarations, builds and loads all three native libraries, and must pass the same contracts; no language test is skipped.
 
+On macOS, Zig emits position-independent object code with its compiler helpers, and the platform C driver links the final `.dylib` against the installed Apple SDK. This separates Zig code generation from SDK library resolution; the older Zig linker's unresolved `libSystem` symbols [were observed in CI](https://github.com/LIghtJUNction/zplugin/actions/runs/43375797132/job/131721913397). Linux and Windows use Zig's shared-library linker directly.
+
 To use an existing installation matching the platform's pinned version:
 
 ```sh

@@ -104,6 +104,25 @@ def install_zig():
     return binary
 
 
+def build_zig_plugin(zig, bindings, library, env):
+    options = ["-j4", "-O", "ReleaseSafe", "-lc", "--dep", "cabi",
+               "-Mroot=" + str(ROOT / "examples" / "foreign" / "plugin.zig"),
+               "-Mcabi=" + str(bindings)]
+    if OS == "Darwin":
+        # Let the current Apple toolchain resolve the current SDK's libSystem.
+        # Zig 0.15.2 generates the PIC code and bundles its compiler helpers;
+        # the bundled Mach-O linker failed to resolve libSystem on our CI SDK.
+        compiler = shutil.which("cc")
+        if not compiler:
+            raise SystemExit("macOS Zig integration requires the platform C linker")
+        object_file = library.with_suffix(".o")
+        run(zig, "build-obj", "-fPIC", "-fcompiler-rt", *options,
+            "-femit-bin=" + str(object_file), env=env)
+        run(compiler, "-dynamiclib", object_file, "-o", library, env=env)
+    else:
+        run(zig, "build-lib", "-dynamic", *options, "-femit-bin=" + str(library), env=env)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--zig", default=os.environ.get("ZIG"))
@@ -151,9 +170,7 @@ def main():
     translated = run(zig, "translate-c", "-j4", "-lc", "-I", output,
                      ROOT / "examples" / "foreign" / "zig_api.h", capture=True, env=env)
     bindings.write_text(translated + "\n", encoding="utf-8")
-    run(zig, "build-lib", "-j4", "-dynamic", "-O", "ReleaseSafe", "-lc", "--dep", "cabi",
-        "-Mroot=" + str(ROOT / "examples" / "foreign" / "plugin.zig"),
-        "-Mcabi=" + str(bindings), "-femit-bin=" + str(library), env=env)
+    build_zig_plugin(zig, bindings, library, env)
     libraries.append(library)
     run(host, *libraries)
     evidence = {
