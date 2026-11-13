@@ -1,5 +1,5 @@
 {
-  "bump": "minor",
-  "version": "",
+  "bump": "custom",
+  "version": "0.2.0",
   "dry_run": false
 }
