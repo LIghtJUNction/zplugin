@@ -10,11 +10,17 @@ from those headers. Additive
 extension records support checked structs/enums, owned resources, callbacks,
 and cross-library tasks that the Rust host can `.await`.
 
+For **untrusted plugins**, enable the separate `wasm` backend: validated Wasm32
+bytecode, no host imports, finite execution fuel, and bounded guest memory.
+Native `.so`/`.dylib`/`.dll` loading still requires trusted code.
+
 Rust 1.85.0 or newer; edition 2024. Development toolchain: 1.100.0, the stable
 release published on 2026-11-12. Native loading targets Linux,
 macOS, and Windows; see [the 0.2.0 delivery record](docs/zplugin-0.2.0-delivery.md) for tested machines
 and compiler combinations. This is a library of primitives, with no background
 watcher, runtime, transport, or plugin discovery service.
+The optional Wasm host needs Rust 1.86 or newer; native/default features retain
+Rust 1.85. Wasm guest code can use the default allocator-free crate.
 
 ## Install
 
@@ -196,10 +202,53 @@ See the [async three-crate example](examples/async), the complete
 | `std` | Native paths, error integration, panic containment | `std`, implies `alloc` |
 | `macros` | Trait-to-ABI generation | Compilation-only macro crate |
 | `hot-reload` | Bounded generations and request leases | `alloc` |
+| `wasm` | Import-free, fuel-metered Wasm32 sandbox; separate byte-buffer protocol | `alloc` + Wasmi 2.0 and its dependencies; Rust 1.86+ |
 
 For allocator-free plugins, implement the public ABI with application-owned
 object storage. `export::Object<T>` and the entrypoint guards also work without
 an allocator. Convenience `export!` factories deliberately require `alloc`.
+
+## Untrusted Wasm plugins
+
+The host opts in explicitly; the default native runtime stays dependency-free:
+
+```toml
+[dependencies]
+zplugin = { version = "0.2.0", features = ["wasm"] }
+```
+
+```rust,ignore
+use zplugin::wasm::{Interface, Limits, Plugin};
+
+let interface = Interface { id: 0x7a70_6c75_6769_6e01, version: 1 };
+// bytes is an untrusted binary Wasm module; this API is safe to call.
+let mut plugin = Plugin::new(&bytes, interface, Limits::default())?;
+let mut output = [0; 64];
+let written = plugin.call(1, b"hello", &mut output)?;
+assert_eq!(&output[..written], b"HELLO");
+# Ok::<(), zplugin::wasm::Error>(())
+```
+
+Implement `wasm_guest::Guest`, export it with `export_wasm!`, and compile for
+`wasm32-unknown-unknown`. The [complete guest](examples/wasm/guest.rs) and
+[host](examples/wasm_host.rs) run with:
+
+```sh
+rustup target add wasm32-unknown-unknown
+python3 scripts/wasm.py
+```
+
+Wasm calls use numeric operations and bounded byte buffers. Input/output are
+copied across the memory boundary; native trait proxies, handles, callbacks,
+and async tasks are not forwarded into the sandbox. No WASI, filesystem,
+network, environment, clock or process capabilities are granted. Module imports
+and start sections are rejected. A trap exhausts/invalidates that instance, not
+the native host's call stack; subsequent use returns `Poisoned`.
+
+This is an in-process Wasm sandbox whose isolation depends on the engine.
+Guest-memory limits do not cap process RSS, and fuel is not a compilation-time
+deadline. Use additional OS process isolation for strict total-memory/time bounds
+or protection against engine vulnerabilities. See [protocol, policy and evidence](docs/wasm.md).
 
 ## Multiple interfaces and hot switching
 
@@ -236,7 +285,7 @@ Task/callback extensions use independent size/version-prefixed tables. Failed
 resource cleanup prevents cooperative unloading, including a future or callback
 capture destructor that panics.
 
-Steady borrowed calls use cached function pointers without forced allocation,
+Steady native borrowed calls use cached function pointers without forced allocation,
 serialization, symbol lookup, or per-call reference counting. Actual comparisons
 against inline/noinline calls, cached C pointers and cached `libloading` symbols
 are in [the 0.2.0 performance report](docs/performance-0.2.0.md), including
@@ -250,13 +299,16 @@ python3 scripts/check.py
 python3 scripts/check.py --cross-version
 python3 scripts/legacy.py
 python3 scripts/foreign.py --install-zig
+python3 scripts/wasm.py
 python3 tools/bench/run.py docs/benchmarks/v0.2.0
 python3 tools/bench/extensions.py
 ```
 
 CI runs actual hosts and dynamic libraries on Linux, macOS, and Windows, plus
 Rust 1.85.0/stable, core-only embedded/WASM compilation, negative macro fixtures,
-and release transaction tests. The manual release workflow supports
+and release transaction tests. Wasm also runs on all three native host platforms,
+with Rust 1.86 engine-MSRV/no_std checks and independently built guest/host pairs.
+The manual release workflow supports
 `patch/minor/major/custom`, `dry_run`, exact-commit validation, dependency-ordered
 publication, and recovery after a partial upload. It uses the step-scoped
 `CARGO_REGISTRY_TOKEN` secret. See [release operations](docs/releases.md).

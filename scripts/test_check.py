@@ -9,6 +9,33 @@ from unittest.mock import patch
 import check
 
 
+class FeatureSelectionTests(unittest.TestCase):
+    def test_native_msrv_does_not_enable_wasm_engine(self):
+        flags, configurations, wasm = check.feature_selection("rustc 1.85.0\nrelease: 1.85.0\n")
+        self.assertEqual(flags, ["--features", "std,macros,hot-reload"])
+        self.assertEqual(len(configurations), 8)
+        self.assertFalse(wasm)
+
+    def test_wasm_msrv_and_stable_cover_all_features(self):
+        for release in ["1.86.0", "1.100.0", "1.101.0-nightly"]:
+            with self.subTest(release=release):
+                flags, configurations, wasm = check.feature_selection("release: " + release)
+                self.assertEqual(flags, ["--all-features"])
+                self.assertEqual(len(configurations), 12)
+                self.assertIn("wasm", configurations)
+                self.assertTrue(wasm)
+
+    def test_native_only_is_explicit_even_on_new_compiler(self):
+        flags, configurations, wasm = check.feature_selection("release: 1.100.0", native_only=True)
+        self.assertNotIn("--all-features", flags)
+        self.assertNotIn("wasm", configurations)
+        self.assertFalse(wasm)
+
+    def test_unrecognized_rustc_output_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "release version"):
+            check.feature_selection("not a compiler version")
+
+
 class EncodingTests(unittest.TestCase):
     def test_capture_uses_compiler_encoding_not_windows_locale(self):
         code = "import sys; sys.stdout.buffer.write('接口'.encode('utf-8'))"

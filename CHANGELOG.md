@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+- Add an opt-in Wasmi 2.0 sandbox for untrusted binary Wasm32 plugins, with safe
+  loading, denied imports/start sections, fuel metering and bounded guest resources.
+- Add a separate versioned byte-buffer protocol and allocator-free `Guest` /
+  `export_wasm!` SDK; native C ABI tables, async tasks and callbacks are unchanged.
+- Validate metadata, memory offsets, capacities and output lengths; preserve host
+  output on errors and poison instances after traps or invalid success results.
+- Test malicious modules, fuel/stack/memory/table limits, Cargo feature unification,
+  independently compiled Rust guests, and native Linux/macOS/Windows hosts.
+- Preserve native/default Rust 1.85 and zero runtime dependencies. The optional
+  Wasm host requires Rust 1.86 and adds the explicitly documented Wasmi dependency.
+
 ## [0.2.0] - 2026-11-13
 
 - Add cross-library owned tasks with poll/cancel/release and a thread-safe retained

@@ -6,7 +6,10 @@
 //! The default feature set needs neither `std` nor an allocator. Enable `macros`
 //! for generated interfaces, `alloc` for owned library leases and plugin factories,
 //! `std` for path conveniences and panic containment, and `hot-reload` for generations.
-//! Loading is unsafe: native code must obey the ABI and ownership contracts.
+//! Native loading is unsafe: native code must obey ABI and ownership contracts.
+//! The separate `wasm` feature provides an import-free, fuel-metered sandbox for
+//! untrusted WebAssembly, with an optional Wasmi runtime dependency (Rust 1.86+).
+//! `wasm_guest` and `export_wasm!` are allocator-free and need no engine feature.
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -25,6 +28,9 @@ mod runtime;
 mod status;
 pub mod task;
 pub mod value;
+#[cfg(feature = "wasm")]
+pub mod wasm;
+pub mod wasm_guest;
 
 pub use callback::{Callback, CallbackRef};
 pub use resource::{OwnedResource, Resource, ResourceHandler};

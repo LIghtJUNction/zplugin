@@ -75,6 +75,11 @@ jobs:
           cargo -V
       - name: Unit, integration, documentation and real cdylib tests
         run: python scripts/check.py
+      - name: Independently compile and run the sandboxed Wasm plugin
+        if: matrix.rust == 'stable'
+        run: |
+          rustup target add wasm32-unknown-unknown
+          python scripts/wasm.py
       - name: Generated C11, C++17 and Zig plugin integration
         if: matrix.rust == 'stable'
         run: python scripts/foreign.py --install-zig
@@ -124,3 +129,48 @@ jobs:
           cargo check --locked -p zplugin --no-default-features --target wasm32-unknown-unknown
       - name: Independently compile host and plugin with different Rust versions
         run: python3 scripts/check.py --cross-version
+
+  wasm-msrv:
+    name: Wasm / Rust 1.86.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RUSTUP_TOOLCHAIN: '1.86.0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source || github.sha }}
+          persist-credentials: false
+      - name: Reconstruct the exact release candidate
+        if: inputs.version != ''
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_SOURCE: ${{ inputs.source }}
+          RELEASE_CANDIDATE: ${{ inputs.candidate }}
+        run: python3 scripts/release.py candidate --version "$RELEASE_VERSION" --source "$RELEASE_SOURCE" --expected "$RELEASE_CANDIDATE"
+      - name: Install the optional engine's minimum supported Rust
+        run: |
+          rustup toolchain install 1.86.0 --profile minimal --component rustfmt --component clippy
+          rustup toolchain install stable --profile minimal --component rustfmt
+          rustup target add wasm32-unknown-unknown thumbv7em-none-eabi
+          rustup target add --toolchain stable wasm32-unknown-unknown
+      - name: Check the no_std engine and execute adversarial contract tests
+        run: |
+          cargo check --locked -p zplugin --no-default-features --features wasm
+          cargo check --locked -p zplugin --no-default-features --features wasm --target thumbv7em-none-eabi
+          cargo clippy --locked -p zplugin --all-targets --all-features -- -D warnings
+          cargo test --locked -p zplugin --all-features
+          cargo test --locked -p zplugin --no-default-features --features wasm,wasmi/memory64 --test wasm
+          python3 scripts/wasm.py
+      - name: Run independently compiled Wasm guests across Rust versions
+        run: |
+          python3 scripts/wasm.py --guest-toolchain stable
+          python3 scripts/wasm.py --host-toolchain stable
+      - name: Preserve Wasm MSRV evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verification-wasm-msrv-${{ github.run_attempt }}
+          path: artifacts/wasm-*.json
+          if-no-files-found: ignore
+          retention-days: 30

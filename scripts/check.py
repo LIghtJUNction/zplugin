@@ -17,6 +17,18 @@ LIB = ("" if os.name == "nt" else "lib") + "demo_plugin" + EXT
 EXE = ".exe" if os.name == "nt" else ""
 START = time.monotonic()
 LABEL = re.sub(r"[^A-Za-z0-9_.-]", "_", os.environ.get("RUSTUP_TOOLCHAIN", "pinned"))
+NATIVE_FEATURES = ["", "alloc", "std", "macros", "alloc,macros", "std,macros", "hot-reload", "hot-reload,macros"]
+WASM_FEATURES = ["wasm", "wasm,std", "wasm,macros", "wasm,hot-reload"]
+
+
+def feature_selection(rustc_version, native_only=False):
+    """Wasm's engine needs Rust 1.86; native callers retain the 1.85 MSRV."""
+    version = re.search(r"(?m)^release: (\d+)\.(\d+)\.(\d+)", rustc_version)
+    if version is None:
+        raise ValueError("rustc -Vv did not contain a release version")
+    wasm = not native_only and tuple(map(int, version.groups())) >= (1, 86, 0)
+    flags = ["--all-features"] if wasm else ["--features", "std,macros,hot-reload"]
+    return flags, NATIVE_FEATURES + (WASM_FEATURES if wasm else []), wasm
 
 
 def run(*args, env=None, capture=False):
@@ -105,16 +117,23 @@ def cross_version():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cross-version", action="store_true")
+    parser.add_argument("--native-only", action="store_true", help="omit the optional Wasm engine")
     args = parser.parse_args()
-    run("rustc", "-Vv")
+    compiler = run("rustc", "-Vv", capture=True).strip()
+    print(compiler, flush=True)
     if args.cross_version:
         cross_version()
         return
     run("cargo", "fmt", "--all", "--check")
-    run("cargo", "clippy", "--locked", "--workspace", "--all-targets", "--all-features", "--", "-D", "warnings")
-    run("cargo", "test", "--locked", "--workspace", "--all-features")
+    flags, configurations, wasm = feature_selection(compiler, args.native_only)
+    run("cargo", "clippy", "--locked", "--workspace", "--all-targets", *flags, "--", "-D", "warnings")
+    run("cargo", "test", "--locked", "--workspace", *flags)
     run("cargo", "test", "--locked", "-p", "zplugin", "--no-default-features")
-    for features in ["", "alloc", "std", "macros", "alloc,macros", "std,macros", "hot-reload", "hot-reload,macros"]:
+    tree = run("cargo", "tree", "--locked", "-p", "zplugin", "--no-default-features",
+               "--edges", "normal", "--prefix", "none", capture=True)
+    if len(tree.strip().splitlines()) != 1:
+        raise SystemExit("default runtime unexpectedly contains dependencies:\n" + tree)
+    for features in configurations:
         command = ["cargo", "check", "--locked", "-p", "zplugin", "--no-default-features"]
         if features:
             command += ["--features", features]
@@ -123,8 +142,10 @@ def main():
     dynamic()
     run(sys.executable, "scripts/async.py")
     run(sys.executable, "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py")
-    evidence = {"platform": platform.platform(), "rustc": run("rustc", "-Vv", capture=True).strip(),
-                "compile_fail_cases": ui, "feature_configurations": 8,
+    evidence = {"platform": platform.platform(), "rustc": compiler,
+                "compile_fail_cases": ui, "feature_configurations": len(configurations),
+                "wasm_enabled": wasm,
+                "default_runtime_dependency_count": 0,
                 "elapsed_seconds": round(time.monotonic() - START, 2), "result": "pass"}
     artifact = ROOT / ("artifacts/check-" + LABEL + ".json")
     artifact.parent.mkdir(exist_ok=True)
