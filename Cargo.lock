@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "async-host"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-interface",
  "zplugin",
@@ -12,14 +12,14 @@ dependencies = [
 
 [[package]]
 name = "async-interface"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "zplugin",
 ]
 
 [[package]]
 name = "async-plugin"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-interface",
  "zplugin",
@@ -33,7 +33,7 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
 name = "demo-host"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "demo-interface",
  "zplugin",
@@ -41,14 +41,14 @@ dependencies = [
 
 [[package]]
 name = "demo-interface"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "zplugin",
 ]
 
 [[package]]
 name = "demo-plugin"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "demo-interface",
  "zplugin",
@@ -56,7 +56,7 @@ dependencies = [
 
 [[package]]
 name = "foreign-interface"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "zplugin",
 ]
@@ -114,14 +114,14 @@ checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
 name = "zplugin"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "zplugin-macros",
 ]
 
 [[package]]
 name = "zplugin-bench"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-interface",
  "demo-interface",
@@ -131,7 +131,7 @@ dependencies = [
 
 [[package]]
 name = "zplugin-contract-tests"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "demo-interface",
  "zplugin",
@@ -139,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "zplugin-foreign-tests"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "foreign-interface",
  "zplugin",
@@ -147,7 +147,7 @@ dependencies = [
 
 [[package]]
 name = "zplugin-macros"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-11-13
 
 - Add cross-library owned tasks with poll/cancel/release and a thread-safe retained
   waker protocol; host tasks implement Future without exposing Rust Future layout.
