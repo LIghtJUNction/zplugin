@@ -174,7 +174,7 @@ shut down an external executor; cooperative unloading requires workers and
 callback return paths to be fully joined/drained.
 
 `JobsApi::write_c_header(&mut writer)` emits the exact argument layouts, method
-signatures and descriptor helpers. C11 and C++17 include the header; Zig 0.17.1
+signatures and descriptor helpers. C11 and C++17 include the header; Zig
 uses its automatically translated module. The generator itself writes through
 `core::fmt::Write` without needing an allocator.
 

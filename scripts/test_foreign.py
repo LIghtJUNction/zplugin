@@ -26,6 +26,11 @@ class ForeignRunnerTests(unittest.TestCase):
         with patch.object(foreign, "OS", "Windows"), patch.object(foreign.platform, "machine", return_value="AMD64"):
             self.assertEqual(foreign.zig_target(), "x86_64-windows")
 
+    def test_compiler_pin_matches_platform(self):
+        for platform, version in [("Darwin", "0.15.2"), ("Linux", "0.17.1"), ("Windows", "0.17.1")]:
+            with self.subTest(platform=platform), patch.object(foreign, "OS", platform):
+                self.assertEqual(foreign.expected_zig_version(), version)
+
 
 if __name__ == "__main__":
     unittest.main()

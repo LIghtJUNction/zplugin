@@ -1,6 +1,6 @@
 # C, C++, and Zig plugins
 
-The shared Rust interface is the source of truth for every language. `ForeignApi::write_c_header` generates the argument records, return records, complete method signatures, stable value layouts, and descriptor initializers. C11 and C++17 include the resulting header. Zig 0.17.1 imports the module produced by `zig translate-c` from that same header.
+The shared Rust interface is the source of truth for every language. `ForeignApi::write_c_header` generates the argument records, return records, complete method signatures, stable value layouts, and descriptor initializers. C11 and C++17 include the resulting header. Zig imports the module produced by `zig translate-c` from that same header.
 
 ## Run the complete example
 
@@ -10,9 +10,11 @@ From the repository root, with Rust and Python 3.12 or newer:
 python scripts/foreign.py --install-zig
 ```
 
-The script downloads the official Zig 0.17.1 archive into `target/`, verifies its pinned SHA-256 checksum before extraction, generates the declarations, builds three native dynamic libraries, and loads all three with the Rust host. It uses the platform C/C++ compilers when available on Linux and macOS; Zig's C/C++ drivers provide the Windows fallback. No compiler or runtime is added to the published Rust runtime dependencies.
+The script downloads the official Zig archive into `target/`, verifies its pinned SHA-256 checksum before extraction, generates the declarations, builds three native dynamic libraries, and loads all three with the Rust host. The compiler pins are **Zig 0.15.2 on macOS** and **Zig 0.17.1 on Linux/Windows**. It uses the platform C/C++ compilers when available on Linux and macOS; Zig's C/C++ drivers provide the Windows fallback. No compiler or runtime is added to the published Rust runtime dependencies.
 
-To use an existing Zig 0.17.1 installation:
+The macOS pin is a compiler compatibility choice. Zig 0.17.1's native macOS `translate-c` exceeded the 300-second command deadline [in CI](https://github.com/LIghtJUNction/zplugin/actions/runs/43374671134/job/131718250206), before any Zig plugin could be built or loaded. This is a translation-stage failure, not a failing plugin ABI assertion. The macOS job still generates declarations, builds and loads all three native libraries, and must pass the same contracts; no language test is skipped.
+
+To use an existing installation matching the platform's pinned version:
 
 ```sh
 python scripts/foreign.py --zig /path/to/zig

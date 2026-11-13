@@ -1,4 +1,4 @@
-/* Input to Zig 0.17.1's C translation tool. */
+/* Input to Zig's C translation tool. */
 #include "foreign.h"
 
 /* Translate only the plugin ABI and the four C library functions this example

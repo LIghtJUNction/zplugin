@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    # Release requests run this exact matrix through workflow_call. Do not queue
+    # a duplicate native matrix for a request-only commit.
+    paths-ignore: [.github/release-request.json]
   pull_request:
   workflow_dispatch:
   workflow_call:

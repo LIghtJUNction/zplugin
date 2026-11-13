@@ -15,13 +15,13 @@ import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.17.1"
-# Official https://ziglang.org/download/index.json, stable release 2026-11-02.
+# Official https://ziglang.org/download/index.json: 0.17.1 on Linux/Windows,
+# 0.15.2 on macOS. The 0.17.1 native macOS translator repeatedly times out.
 CHECKSUMS = {
     "x86_64-linux": "3581863e3cbcfd0fce0efc682ce7e9e93da96668a977791d356a26d2a7e9b17a",
     "aarch64-linux": "a1546d5646eb184437918d6635ca6b762a0e889eac09cef720ee7a1ed3fe7795",
-    "x86_64-macos": "9af07b20319fbd0c92ee46ad23e81d6a782b1aaea2cfb8dcbff35f1d2c7ddbb7",
-    "aarch64-macos": "75f1bc7a1e9852f17ec9a0c1895f767c4ec56d46bc8a834920eece1d0359dd8d",
+    "x86_64-macos": "375b6909fc1495d16fc2c7db9538f707456bfc3373b14ee83fdd3e22b3d43f7f",
+    "aarch64-macos": "3cc2bab367e185cdfb27501c4b30b1b0653c28d9f73df8dc91488e66ece5fa6b",
     "x86_64-windows": "b03f477a1943673e02aca0f570e8030dffd536ce1f45cbc4d3326ec31159562e",
     "aarch64-windows": "4789895bdb1e312a2ea73b2a7c0a0cc8d2ab62ba6976e834a7c54cf443377c15",
 }
@@ -70,19 +70,24 @@ def zig_target():
     return architecture + "-" + {"Linux": "linux", "Darwin": "macos", "Windows": "windows"}[OS]
 
 
+def expected_zig_version():
+    return "0.15.2" if OS == "Darwin" else "0.17.1"
+
+
 def install_zig():
     target = zig_target()
     checksum = CHECKSUMS.get(target)
     if checksum is None:
         raise SystemExit("No verified Zig archive for " + target)
-    name = "zig-" + target + "-" + VERSION
+    version = expected_zig_version()
+    name = "zig-" + target + "-" + version
     directory = ROOT / "target" / "foreign-toolchain"
     binary = directory / name / ("zig" + EXE)
     if binary.exists():
         return binary
     directory.mkdir(parents=True, exist_ok=True)
     archive = directory / (name + (".zip" if OS == "Windows" else ".tar.xz"))
-    url = "https://ziglang.org/download/" + VERSION + "/" + archive.name
+    url = "https://ziglang.org/download/" + version + "/" + archive.name
     print("Downloading", url, flush=True)
     with urllib.request.urlopen(url, timeout=60) as response, archive.open("wb") as output:
         shutil.copyfileobj(response, output)
@@ -114,8 +119,8 @@ def main():
     if not zig:
         raise SystemExit("Set ZIG or pass --zig PATH; alternatively use --install-zig")
     zig_version = run(zig, "version", capture=True)
-    if zig_version != VERSION:
-        raise SystemExit(f"Expected Zig {VERSION}, found {zig_version}")
+    if zig_version != expected_zig_version():
+        raise SystemExit(f"Expected Zig {expected_zig_version()} on {OS}, found {zig_version}")
     output = ROOT / "target" / "foreign"
     output.mkdir(parents=True, exist_ok=True)
     run("cargo", "build", "--locked", "-p", "zplugin-foreign-tests")

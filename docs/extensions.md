@@ -47,10 +47,12 @@ prevent safe Rust callers from forging a selected but uninitialized payload.
 
 `InterfaceApi::write_c_header` writes declarations, signatures and descriptor
 initializers to `core::fmt::Write`. C11 and C++17 consume the header directly.
-The Zig 0.17.1 example runs `zig translate-c` for the target and imports its
+The Zig example runs `zig translate-c` for the target and imports its
 generated module. All participants must use the same platform C ABI, pointer
 width, architecture, endianness and compatible system-library requirements.
 This does not produce a platform-independent plugin binary.
+The validation toolchain pins Zig 0.15.2 on macOS and 0.17.1 on Linux/Windows;
+the example documents the macOS translator timeout behind that compiler choice.
 
 The [foreign-language example](../examples/foreign/README.md) includes every build
 configuration and the Rust host. It exercises nested payload enums, borrowed
