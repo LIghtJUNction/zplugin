@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.0] - 2026-11-13
 
 - Add an opt-in Wasmi 2.0 sandbox for untrusted binary Wasm32 plugins, with safe
   loading, denied imports/start sections, fuel metering and bounded guest resources.

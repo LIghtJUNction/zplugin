@@ -28,7 +28,7 @@ Shared interface crate:
 
 ```toml
 [dependencies]
-zplugin = { version = "0.2.0", features = ["macros"] }
+zplugin = { version = "0.3.0", features = ["macros"] }
 ```
 
 Plugin and host crates can enable `std` independently. The interface itself may
@@ -59,7 +59,7 @@ Use the shared interface crate as a dependency and configure the plugin:
 crate-type = ["cdylib"]
 
 [dependencies]
-zplugin = { version = "0.2.0", features = ["std", "macros"] }
+zplugin = { version = "0.3.0", features = ["std", "macros"] }
 calculator-api = { path = "../calculator-api" }
 ```
 
@@ -214,7 +214,7 @@ The host opts in explicitly; the default native runtime stays dependency-free:
 
 ```toml
 [dependencies]
-zplugin = { version = "0.2.0", features = ["wasm"] }
+zplugin = { version = "0.3.0", features = ["wasm"] }
 ```
 
 ```rust,ignore
