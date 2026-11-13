@@ -120,7 +120,7 @@ pub fn guard(f: impl FnOnce() -> Result<()>) -> i32 {
 }
 
 /// # Safety
-/// `object` must point to a live Object<T>, created in this library, and used on
+/// `object` must point to a live `Object<T>`, created in this library, and used on
 /// its creating thread. Reentry is rejected before creating a mutable reference.
 pub unsafe fn with_object<T, R>(
     object: *mut c_void,

@@ -11,6 +11,9 @@ keywords = ["plugin", "ffi", "no-std", "dynamic", "hot-reload"]
 categories = ["no-std", "api-bindings"]
 include = ["src/**", "README.md", "LICENSE-*", "docs/abi.md", "docs/extensions.md", "docs/wasm.md", "Cargo.toml", "Cargo.lock"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [workspace]
 resolver = "2"
 members = [".", "crates/zplugin-macros", "examples/interface", "examples/plugin", "examples/host", "examples/foreign/interface", "examples/async/interface", "examples/async/plugin", "examples/async/host", "tools/foreign-tests", "tools/bench", "tools/contract-tests"]

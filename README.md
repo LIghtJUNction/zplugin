@@ -249,6 +249,8 @@ This is an in-process Wasm sandbox whose isolation depends on the engine.
 Guest-memory limits do not cap process RSS, and fuel is not a compilation-time
 deadline. Use additional OS process isolation for strict total-memory/time bounds
 or protection against engine vulnerabilities. See [protocol, policy and evidence](docs/wasm.md).
+Reproducible sandbox timings and allocation measurements are in the
+[0.3.0 Wasm performance report](docs/performance-0.3.0.md).
 
 ## Multiple interfaces and hot switching
 

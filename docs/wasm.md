@@ -66,7 +66,7 @@ memory growth (6). Failure operations are deliberate test cases, not host APIs.
 ## Frozen byte-buffer protocol v1
 
 This protocol is separate from native `zplugin_entry_v1`. A compatible core Wasm
-binary exports exactly the required items below; unrelated exports are ignored.
+binary exports the three required items below; unrelated exports are ignored.
 The engine rejects imports, start sections, shared memory, and multiple memories.
 The adapter additionally rejects memory64 even if another Cargo dependency
 enables that engine feature. A module may have one bounded internal table.

@@ -41,7 +41,7 @@ impl Generations {
     /// Any failure leaves the current generation unchanged. The caller passes a
     /// versioned snapshot explicitly through the closure when state is involved.
     /// # Safety
-    /// The trust and unload contracts of Plugin::load[_cooperative] apply.
+    /// The trust and unload contracts of [`Plugin::load`] and [`Plugin::load_cooperative`] apply.
     pub unsafe fn reload<T>(
         &mut self,
         path: &CStr,

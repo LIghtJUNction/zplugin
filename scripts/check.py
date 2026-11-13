@@ -127,6 +127,8 @@ def main():
     run("cargo", "fmt", "--all", "--check")
     flags, configurations, wasm = feature_selection(compiler, args.native_only)
     run("cargo", "clippy", "--locked", "--workspace", "--all-targets", *flags, "--", "-D", "warnings")
+    run("cargo", "doc", "--locked", "--workspace", "--no-deps", *flags,
+        env=dict(os.environ, RUSTDOCFLAGS=os.environ.get("RUSTDOCFLAGS", "") + " -D warnings"))
     run("cargo", "test", "--locked", "--workspace", *flags)
     run("cargo", "test", "--locked", "-p", "zplugin", "--no-default-features")
     tree = run("cargo", "tree", "--locked", "-p", "zplugin", "--no-default-features",
