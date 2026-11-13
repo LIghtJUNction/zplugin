@@ -239,7 +239,8 @@ capture destructor that panics.
 Steady borrowed calls use cached function pointers without forced allocation,
 serialization, symbol lookup, or per-call reference counting. Actual comparisons
 against inline/noinline calls, cached C pointers and cached `libloading` symbols
-are in [performance.md](docs/performance.md), including raw samples and noise.
+are in [the 0.2.0 performance report](docs/performance-0.2.0.md), including
+three raw runs, task initialization, reused/changed wakers, and worker shutdown.
 An inline static call remains a distinct, cheaper baseline for tiny functions.
 
 ## Validation and release
@@ -249,7 +250,8 @@ python3 scripts/check.py
 python3 scripts/check.py --cross-version
 python3 scripts/legacy.py
 python3 scripts/foreign.py --install-zig
-python3 tools/bench/run.py
+python3 tools/bench/run.py docs/benchmarks/v0.2.0
+python3 tools/bench/extensions.py
 ```
 
 CI runs actual hosts and dynamic libraries on Linux, macOS, and Windows, plus

@@ -1,0 +1,26 @@
+# source=76114e0cbc5e5e01d84b9945322f9d592bf02477; dirty=M Cargo.lock;  M README.md;  M examples/foreign/zig_api.h;  M rust-toolchain.toml;  M scripts/foreign.py;  M tools/bench/Cargo.toml; ?? scripts/test_foreign.py; ?? tools/bench/extensions.py; ?? tools/bench/src/bin/
+# system=Linux-6.18.57-x86_64-with-glibc2.41; cpu=AMD EPYC 9V74 80-Core Processor; affinity_cpu=0
+# profile=release,opt-level=3,lto=thin,codegen-units=1,panic=unwind
+# RUSTFLAGS=
+# rustc 1.100.0 (0ef1bc386 2026-11-09)
+# binary: rustc
+# commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a
+# commit-date: 2026-11-09
+# host: x86_64-unknown-linux-gnu
+# release: 1.100.0
+# LLVM version: 23.1.5
+# repeat=3
+# quantiles=batch_means_ns_per_op; allocations=Rust_global_allocators_only; worker rows include OS scheduling but not OS allocation accounting
+# warm polls use a pending worker blocked on a condition variable; no busy-worker contention; task/waker setup is outside timing
+# raw and proxy C-waker rows share stateless static C wakers and borrowed library lifetimes; Future rows add the Rust-waker bridge
+name,iterations,samples,min_ns,p50_ns,p95_ns,p99_ns,max_ns,host_allocations_per_op,plugin_allocations_per_op,total_allocations_per_op,host_bytes_per_op,plugin_bytes_per_op,host_live_delta_bytes,plugin_live_delta_bytes
+ready/create-drop,1000,101,20.341,20.431,20.531,36.746,38.908,0.000000,1.000000,1.000000,0.000,56.000,0,0
+ready/c-poll-drop,1000,101,61.503,62.484,106.160,173.912,220.742,0.000000,2.000000,2.000000,0.000,96.000,0,0
+ready/future-poll-drop,1000,101,74.903,75.404,100.912,129.545,438.451,1.000000,2.000000,3.000000,40.000,96.000,0,0
+pending/cached-c-poll,10000,101,12.038,12.111,16.878,23.679,32.005,0.000000,0.000000,0.000000,0.000,0.000,0,0
+pending/proxy-c-poll,10000,101,13.830,14.018,19.846,22.781,30.860,0.000000,0.000000,0.000000,0.000,0.000,0,0
+pending/proxy-c-replace-waker,10000,101,43.956,45.153,54.317,56.981,57.023,0.000000,1.000000,1.000000,0.000,40.000,0,0
+pending/future-poll,10000,101,14.482,14.777,18.948,26.494,26.587,0.000000,0.000000,0.000000,0.000,0.000,0,0
+pending/future-replace-waker,10000,101,71.552,73.477,79.374,81.611,83.603,1.000000,1.000000,2.000000,40.000,40.000,0,0
+worker/create-cancel-join-drop,2,101,7586.500,8663.000,13845.500,36454.500,37967.500,0.000000,8.000000,8.000000,0.000,327.000,0,0
+worker/create-signal-complete-join-drop,2,101,7351.000,8197.500,20686.000,23044.500,33014.500,0.000000,8.000000,8.000000,0.000,327.000,0,0

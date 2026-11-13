@@ -1,0 +1,57 @@
+# affinity_cpu=0,repeat=1
+# zplugin benchmark; durations are ns/operation, allocations include host and plugin Rust allocators
+# os=linux,arch=x86_64
+# rustc 1.100.0 (0ef1bc386 2026-11-09)
+# binary: rustc
+# commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a
+# commit-date: 2026-11-09
+# host: x86_64-unknown-linux-gnu
+# release: 1.100.0
+# LLVM version: 23.1.5
+# cpu=AMD EPYC 9V74 80-Core Processor
+# profile=release,opt-level=3,lto=thin,codegen-units=1,panic=unwind
+# RUSTFLAGS=
+# batch quantiles describe independent sample means; single-call quantiles include Instant overhead
+name,iterations,samples,min_ns,p50_ns,p95_ns,p99_ns,max_ns,allocations_per_op,allocated_bytes_per_op
+# baseline_rotation=0
+# stack_plugin_bytes=32,stack_binding_bytes=64,stack_instance_bytes=72,stack_demo_proxy_bytes=136
+# first_load_ns=91828,rss_before_kib=Some(1308),rss_after_kib=Some(1532)
+lifecycle/remap-load-drop,100,41,29529.600,37288.600,44311.780,44998.910,46943.140,2.000000,185.000
+lifecycle/warm-load-drop,100,41,3056.110,3185.500,3994.420,4383.110,6067.540,2.000000,185.000
+lifecycle/core-warm-load-drop,100,41,158.640,160.340,232.760,737.310,854.680,0.000000,0.000
+# instance_host_bytes=0,instance_plugin_bytes=16
+# 1024_instances_host_extra_bytes=0,1024_instances_plugin_extra_bytes=16384
+scalar/static-inline,200000,41,1.353,1.370,1.760,1.885,1.971,0.000000,0.000
+scalar/static-noinline,200000,41,1.624,1.754,2.226,2.750,3.467,0.000000,0.000
+scalar/cached-extern-C,200000,41,2.436,2.558,3.270,4.099,4.576,0.000000,0.000
+scalar/cached-generated-adapter,200000,41,3.519,3.830,4.489,4.667,4.944,0.000000,0.000
+scalar/libloading-cached,200000,41,3.519,3.879,4.715,4.814,4.950,0.000000,0.000
+scalar/zplugin-proxy,200000,41,3.338,3.546,4.137,4.790,5.177,0.000000,0.000
+latency/timer-floor,1,20001,20.000,20.000,30.000,31.000,17175.000,0.000000,0.000
+latency/zplugin-proxy,1,20001,20.000,21.000,30.000,31.000,44066.000,0.000000,0.000
+lifecycle/interface-bind,10000,41,29.025,29.686,36.874,46.260,52.824,0.000000,0.000
+lifecycle/create-drop,10000,41,17.612,17.770,28.851,29.502,39.226,1.000000,16.000
+lifecycle/owned-64B-create-release,10000,41,40.400,41.649,55.139,55.765,56.600,1.000000,64.000
+bytes-64/static-inline,100000,41,3.519,3.798,4.817,5.057,5.568,0.000000,0.000
+bytes-64/static-noinline,100000,41,3.790,4.223,5.081,5.168,5.408,0.000000,0.000
+bytes-64/cached-extern-C,100000,41,4.402,5.838,7.113,7.383,9.182,0.000000,0.000
+bytes-64/cached-generated-adapter,100000,41,12.322,13.225,16.825,16.899,18.366,0.000000,0.000
+bytes-64/libloading-cached,100000,41,12.317,13.683,15.760,17.440,17.695,0.000000,0.000
+bytes-64/zplugin-proxy,100000,41,12.102,13.479,16.866,16.872,17.473,0.000000,0.000
+bytes-4096/static-inline,4000,41,121.127,166.839,195.815,196.769,237.385,0.000000,0.000
+bytes-4096/static-noinline,4000,41,123.807,162.693,182.412,205.660,212.668,0.000000,0.000
+bytes-4096/cached-extern-C,4000,41,123.987,166.341,215.758,221.276,262.380,0.000000,0.000
+bytes-4096/cached-generated-adapter,4000,41,126.453,164.170,209.523,224.138,240.748,0.000000,0.000
+bytes-4096/libloading-cached,4000,41,130.737,171.516,197.791,211.143,232.192,0.000000,0.000
+bytes-4096/zplugin-proxy,4000,41,131.288,177.432,195.036,200.302,212.813,0.000000,0.000
+bytes-1048576/static-inline,16,41,37197.938,38375.312,44222.875,49537.125,49738.688,0.000000,0.000
+bytes-1048576/static-noinline,16,41,29771.125,40084.812,48790.375,50213.812,58383.000,0.000000,0.000
+bytes-1048576/cached-extern-C,16,41,29805.500,39508.312,50739.625,54688.062,62834.688,0.000000,0.000
+bytes-1048576/cached-generated-adapter,16,41,29834.312,38141.812,48256.500,50240.750,61916.438,0.000000,0.000
+bytes-1048576/libloading-cached,16,41,29823.688,35448.438,43163.188,47778.875,49219.125,0.000000,0.000
+bytes-1048576/zplugin-proxy,16,41,29836.188,38278.938,46900.062,54462.750,57887.875,0.000000,0.000
+# host_live_bytes=1664,plugin_live_bytes=32,rss_final_kib=Some(1684),static_calls=37403232
+# hot rows count host allocations; copied plugin allocators are independent of the fixed-plugin counters
+hot/request-lease,200000,41,0.706,0.706,1.076,1.111,1.252,0.000000,0.000
+hot/session-reused-call,200000,41,3.248,3.435,4.888,7.352,13.136,0.000000,0.000
+hot/switch-load-bind-create-collect,20,41,25674.650,36099.400,45023.850,46963.750,49368.400,3.000000,125.000

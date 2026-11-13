@@ -5,9 +5,11 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish = false
+default-run = "zplugin-bench"
 
 [dependencies]
 zplugin = { path = "../..", features = ["std", "macros", "hot-reload"] }
 demo-interface = { path = "../../examples/interface" }
+async-interface = { path = "../../examples/async/interface" }
 libloading = "0.8.9"
 
