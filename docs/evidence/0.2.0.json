@@ -1,0 +1,220 @@
+{
+  "schema": "zplugin-verification-v1",
+  "version": "0.2.0",
+  "validated_commit": "9870ed1873019063b61fdfb3bb2bd9a5ecb858ad",
+  "release_source": "ea929269173aaa3460281b05fd73d9783641bdea",
+  "release_url": "https://github.com/LIghtJUNction/zplugin/releases/tag/v0.2.0",
+  "workflow_url": "https://github.com/LIghtJUNction/zplugin/actions/runs/43376384241",
+  "workflow_result": "success",
+  "validation_jobs": 7,
+  "published_at": "2026-11-13T06:13:05Z",
+  "archives": [
+    {
+      "archive": "verification-macos-latest-1.85.0-1.zip",
+      "sha256": "f8fe1600aeaeec5c9f9093f5dc03689b71b2227e38b8b15bdd78b15432a02318",
+      "records": {
+        "check-1.85.0.json": {
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: aarch64-apple-darwin\nrelease: 1.85.0\nLLVM version: 19.1.7",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "elapsed_seconds": 46.75,
+          "result": "pass"
+        }
+      },
+      "artifact_id": 14014717288
+    },
+    {
+      "archive": "verification-macos-latest-stable-1.zip",
+      "sha256": "9c8d968ecfb3bb32c08eba44d58ffadbe8a67901a48efba808c04c76418cdead",
+      "records": {
+        "check-stable.json": {
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: aarch64-apple-darwin\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "elapsed_seconds": 43.55,
+          "result": "pass"
+        },
+        "foreign-darwin.json": {
+          "result": "pass",
+          "platform": "macOS-26.7.2-arm64-arm-64bit",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: aarch64-apple-darwin\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "zig": "0.15.2",
+          "languages": [
+            "C11",
+            "C++17",
+            "Zig"
+          ],
+          "c_compilers": {
+            "c11": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+            "c++17": "Apple clang version 21.0.0 (clang-2100.1.1.101)"
+          },
+          "contracts": [
+            "generated schema",
+            "stable struct/enum",
+            "borrowed buffers",
+            "owned bytes",
+            "owned resources",
+            "reverse callback",
+            "pending/wake/ready",
+            "cancel",
+            "library lifetime"
+          ],
+          "elapsed_seconds": 41.5
+        }
+      },
+      "artifact_id": 14014297606
+    },
+    {
+      "archive": "verification-ubuntu-latest-1.85.0-1.zip",
+      "sha256": "464ce8cac87bbb10cfc3a928af38b54d6ea7edbfb6b68b77cd30ae93088bf5a9",
+      "records": {
+        "check-1.85.0.json": {
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: x86_64-unknown-linux-gnu\nrelease: 1.85.0\nLLVM version: 19.1.7",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "elapsed_seconds": 29.31,
+          "result": "pass"
+        }
+      },
+      "artifact_id": 14015300647
+    },
+    {
+      "archive": "verification-ubuntu-latest-stable-1.zip",
+      "sha256": "470f77d851b45381a1d59dfc94531f87921e0031146b487fdcb1b54bf8c5a113",
+      "records": {
+        "check-stable.json": {
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "elapsed_seconds": 20.1,
+          "result": "pass"
+        },
+        "foreign-linux.json": {
+          "result": "pass",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "zig": "0.17.1",
+          "languages": [
+            "C11",
+            "C++17",
+            "Zig"
+          ],
+          "c_compilers": {
+            "c11": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+            "c++17": "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0"
+          },
+          "contracts": [
+            "generated schema",
+            "stable struct/enum",
+            "borrowed buffers",
+            "owned bytes",
+            "owned resources",
+            "reverse callback",
+            "pending/wake/ready",
+            "cancel",
+            "library lifetime"
+          ],
+          "elapsed_seconds": 70.36
+        }
+      },
+      "artifact_id": 14014362513
+    },
+    {
+      "archive": "verification-windows-latest-1.85.0-1.zip",
+      "sha256": "2c312185ec25308f809a97e6895767e28736a8d193a94178d4d7bc78ae1ce238",
+      "records": {
+        "check-1.85.0.json": {
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: x86_64-pc-windows-msvc\nrelease: 1.85.0\nLLVM version: 19.1.7",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "elapsed_seconds": 56.56,
+          "result": "pass"
+        }
+      },
+      "artifact_id": 14014912241
+    },
+    {
+      "archive": "verification-windows-latest-stable-1.zip",
+      "sha256": "fefb0fd5b890afe7154a0b1e1a4c241a94d8ccad20db400787467e1c3996d87f",
+      "records": {
+        "check-stable.json": {
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-pc-windows-msvc\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "compile_fail_cases": 36,
+          "feature_configurations": 8,
+          "elapsed_seconds": 53.16,
+          "result": "pass"
+        },
+        "foreign-windows.json": {
+          "result": "pass",
+          "platform": "Windows-2025Server-10.0.26100-SP0",
+          "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-pc-windows-msvc\nrelease: 1.100.0\nLLVM version: 23.1.5",
+          "zig": "0.17.1",
+          "languages": [
+            "C11",
+            "C++17",
+            "Zig"
+          ],
+          "c_compilers": {
+            "c11": "clang version 22.1.8",
+            "c++17": "clang version 22.1.8"
+          },
+          "contracts": [
+            "generated schema",
+            "stable struct/enum",
+            "borrowed buffers",
+            "owned bytes",
+            "owned resources",
+            "reverse callback",
+            "pending/wake/ready",
+            "cancel",
+            "library lifetime"
+          ],
+          "elapsed_seconds": 202.03
+        }
+      },
+      "artifact_id": 14015002457
+    }
+  ],
+  "consumer": {
+    "result": "pass",
+    "version": "0.2.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+    "checksums": {
+      "zplugin": "2376c2084d78c80311487ea9658db1e5d999a05374264318f9869ae56725d14e",
+      "zplugin-macros": "8b38bdcb1dc20733d9f4ea369fa45cd8576d3bf7bfc03bb48d34068880904a99"
+    },
+    "packages": [
+      {
+        "name": "zplugin",
+        "version": "0.2.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      },
+      {
+        "name": "zplugin-macros",
+        "version": "0.2.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index"
+      }
+    ],
+    "dynamic_result": {
+      "suite": "registry-only-consumer",
+      "version": "0.2.0",
+      "checks": 8,
+      "status": "passed"
+    },
+    "checks": [
+      "release build",
+      "fmt",
+      "clippy -D warnings",
+      "registry-only sources",
+      "Cargo.lock checksums",
+      "actual dynamic host/plugin calls"
+    ]
+  }
+}
+

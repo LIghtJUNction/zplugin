@@ -10,7 +10,7 @@ documents both the [C representation](https://doc.rust-lang.org/reference/type-l
 and [native library output types](https://doc.rust-lang.org/reference/linkage.html).
 
 The executable contract is `src/abi.rs`, the generator, and the real-library
-tests. [verification.md](verification.md) records tested compiler/platform
+tests. [the 0.2.0 delivery record](zplugin-0.2.0-delivery.md) records tested compiler/platform
 combinations. ABI compatibility also requires the same architecture, endianness,
 pointer width, target calling convention, system library requirements and CPU
 instruction support. A Linux build is not a Windows or macOS artifact.
@@ -220,7 +220,7 @@ relevant business state before snapshotting if a consistent migration is require
 | Resources release through their origin | Owned-buffer and destructor tests | Custom raw resources must honor the contract |
 | Calls avoid forced allocation/refcounts | Generated code plus host/plugin allocation counters | Business methods may allocate |
 | Versions coexist and failure preserves current | Real v1/v2 and failed-init tests | Application side effects are separate |
-| Cross-compiler compatibility | Independently built 1.85.0/1.99.1 combinations | Same target/system ABI required |
+| Cross-compiler compatibility | Independently built 1.85.0/1.100.0 combinations | Same target/system ABI required |
 
 Review dimensions: contribution is small typed native boundaries; terminology maps
 directly to records and owners; performance claims use measurements; evaluation

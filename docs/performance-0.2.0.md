@@ -41,6 +41,8 @@ Extension CSVs additionally record the pre-commit source and dirty-file list:
 the changes are the benchmark and CI/toolchain updates committed with this
 report, not an unreported alternative runtime. The old 0.1.0 measurements remain
 unchanged in [the historical report](performance.md).
+Measurements precede the version-only release bump; the runtime and example
+functional source was not replaced after measurement.
 
 Each table below uses the **median of three run medians**. Ordinary CSV p50,
 p95, and p99 values are quantiles of **batch means**, not single-call latency

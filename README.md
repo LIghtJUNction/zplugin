@@ -12,7 +12,7 @@ and cross-library tasks that the Rust host can `.await`.
 
 Rust 1.85.0 or newer; edition 2024. Development toolchain: 1.100.0, the stable
 release published on 2026-11-12. Native loading targets Linux,
-macOS, and Windows; see [verification](docs/verification.md) for tested machines
+macOS, and Windows; see [the 0.2.0 delivery record](docs/zplugin-0.2.0-delivery.md) for tested machines
 and compiler combinations. This is a library of primitives, with no background
 watcher, runtime, transport, or plugin discovery service.
 
@@ -261,6 +261,6 @@ and release transaction tests. The manual release workflow supports
 publication, and recovery after a partial upload. It uses the step-scoped
 `CARGO_REGISTRY_TOKEN` secret. See [release operations](docs/releases.md).
 
-Further detail: [ABI and ownership](docs/abi.md), [validation evidence](docs/verification.md),
+Further detail: [ABI and ownership](docs/abi.md), [validation evidence](docs/zplugin-0.2.0-delivery.md),
 [changelog](CHANGELOG.md). Licensed MIT OR Apache-2.0.
 
