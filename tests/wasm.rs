@@ -1,5 +1,6 @@
 #![cfg(feature = "wasm")]
 
+#[path = "wasm_support/wasm_support.rs"]
 mod wasm_support;
 
 use wasm_support::{
