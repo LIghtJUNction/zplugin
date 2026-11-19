@@ -203,13 +203,13 @@ fn print_metadata() {
             println!("# {line}");
         }
     }
-    if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo") {
-        if let Some(cpu) = cpuinfo.lines().find(|line| line.starts_with("model name")) {
-            println!(
-                "# cpu={}",
-                cpu.split_once(':').map_or(cpu, |(_, value)| value).trim()
-            );
-        }
+    if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo")
+        && let Some(cpu) = cpuinfo.lines().find(|line| line.starts_with("model name"))
+    {
+        println!(
+            "# cpu={}",
+            cpu.split_once(':').map_or(cpu, |(_, value)| value).trim()
+        );
     }
     println!("# profile=release,opt-level=3,lto=thin,codegen-units=1,panic=unwind");
     println!(

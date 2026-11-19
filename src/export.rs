@@ -61,7 +61,7 @@ impl<T> Object<T> {
 
 /// Validate structural pointer conditions; memory mapping is a caller obligation.
 pub fn check_pointer<T>(ptr: *const T) -> Result<()> {
-    if ptr.is_null() || (ptr as usize) % core::mem::align_of::<T>() != 0 {
+    if ptr.is_null() || !(ptr as usize).is_multiple_of(core::mem::align_of::<T>()) {
         Err(Error::InvalidArgument)
     } else {
         Ok(())

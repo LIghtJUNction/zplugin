@@ -1,5 +1,7 @@
 # Verification record: v0.1.0
 
+This record documents earlier releases. Version 0.3.1 uses the shared zsys loader and Rust 1.95; its current CI run supplies verification for that dependency change.
+
 Prepared 2026-11-12 (Asia/Taipei). This file records executed local checks and the
 completed GitHub Actions platform matrix, with links to the exact tested commit.
 This is the historical initial-release record. New extension evidence is recorded

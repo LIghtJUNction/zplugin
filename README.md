@@ -3,7 +3,8 @@
 Define a Rust trait, implement it in a `cdylib`, and call it through a typed host
 proxy. zplugin uses a frozen target-platform C ABI, cached function tables, and
 explicit library lifetimes. The default runtime is `no_std`, needs no allocator,
-and has **zero third-party runtime dependencies**.
+and has **zero third-party runtime dependencies**. Its native system loader is
+shared with the Project Z `zsys` crate through the allocation-free `dylib` feature.
 
 The same interface also generates C/C++ headers; Zig imports a module translated
 from those headers. Additive
@@ -14,13 +15,14 @@ For **untrusted plugins**, enable the separate `wasm` backend: validated Wasm32
 bytecode, no host imports, finite execution fuel, and bounded guest memory.
 Native `.so`/`.dylib`/`.dll` loading still requires trusted code.
 
-Rust 1.85.0 or newer; edition 2024. Development toolchain: 1.100.0, the stable
+Rust 1.95 or newer; edition 2024. Development toolchain: 1.100.0, the stable
 release published on 2026-11-12. Native loading targets Linux,
 macOS, and Windows; see [the 0.3.0 delivery record](docs/zplugin-0.3.0-delivery.md) for tested machines
 and compiler combinations. This is a library of primitives, with no background
 watcher, executor, transport, or plugin discovery service.
-The optional Wasm host needs Rust 1.86 or newer; native/default features retain
-Rust 1.85. Wasm guest code can use the default allocator-free crate.
+Native loading, the optional Wasm host and the allocator-free Wasm guest SDK
+share the Rust 1.95 baseline required by zsys. Older release evidence remains
+linked above; new platform verification belongs to this version's CI run.
 
 ## Install
 
@@ -197,12 +199,12 @@ See the [async three-crate example](examples/async), the complete
 
 | Feature | Additional capability | Runtime dependency |
 | --- | --- | --- |
-| default: none | ABI, native loader, borrowed instances, manual resource/factory contracts | `core` and platform loader |
+| default: none | ABI, native loader, borrowed instances, manual resource/factory contracts | `core` and Project Z `zsys/dylib` |
 | `alloc` | Factories, `Rc` leases, owned bytes/resources, closure callbacks, Future/Waker adapters | Rust allocator |
 | `std` | Native paths, error integration, panic containment | `std`, implies `alloc` |
 | `macros` | Trait-to-ABI generation | Compilation-only macro crate |
 | `hot-reload` | Bounded generations and request leases | `alloc` |
-| `wasm` | Import-free, fuel-metered Wasm32 sandbox; separate byte-buffer protocol | `alloc` + Wasmi 2.0 and its dependencies; Rust 1.86+ |
+| `wasm` | Import-free, fuel-metered Wasm32 sandbox; separate byte-buffer protocol | `alloc` + Wasmi 2.0 and its dependencies; Rust 1.95+ |
 
 For allocator-free plugins, implement the public ABI with application-owned
 object storage. `export::Object<T>` and the entrypoint guards also work without
@@ -210,7 +212,7 @@ an allocator. Convenience `export!` factories deliberately require `alloc`.
 
 ## Untrusted Wasm plugins
 
-The host opts in explicitly; the default native runtime stays dependency-free:
+The host opts in explicitly; the default native runtime depends only on Project Z zsys:
 
 ```toml
 [dependencies]
@@ -307,9 +309,9 @@ python3 tools/bench/extensions.py
 ```
 
 CI runs actual hosts and dynamic libraries on Linux, macOS, and Windows, plus
-Rust 1.85.0/stable, core-only embedded/WASM compilation, negative macro fixtures,
+Rust 1.95.0/stable, core-only embedded/WASM compilation, negative macro fixtures,
 and release transaction tests. Wasm also runs on all three native host platforms,
-with Rust 1.86 engine-MSRV/no_std checks and independently built guest/host pairs.
+with Rust 1.95 MSRV/no_std checks and independently built guest/host pairs.
 The manual release workflow supports
 `patch/minor/major/custom`, `dry_run`, exact-commit validation, dependency-ordered
 publication, and recovery after a partial upload. It uses the step-scoped

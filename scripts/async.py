@@ -41,7 +41,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     if options.cross_version:
         stable = os.environ.get("ZPLUGIN_STABLE_TOOLCHAIN", "stable")
-        versions = ["1.85.0", stable]
+        versions = ["1.95.0", stable]
         for index, compiler in enumerate(versions):
             plugin(output / ("plugin-" + str(index)), output / ("plugin-" + str(index) + EXT),
                    toolchain=compiler, release=index == 1)

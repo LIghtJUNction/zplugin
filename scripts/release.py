@@ -404,7 +404,7 @@ def finish(version, validation_url):
         "### Changes\n\n" + changelog_notes(version) + "\n\n"
         f"Validated commit: `{commit}`. [Validation run]({validation_url}).\n\n"
         "Linux, macOS and Windows compile and execute the Rust sync/async and C/C++/Zig host/plugin contract tests. "
-        "The same native hosts execute independently compiled Wasm plugins; the optional engine is checked on Rust 1.86 and no_std targets. "
+        "The same native hosts execute independently compiled Wasm plugins; the native and optional Wasm paths are checked on Rust 1.95 and no_std targets. "
         "The same candidate commit passes feature checks, doctests, compile-fail diagnostics and package verification. "
         "See the repository performance report for measured numbers and environment limits.\n\n"
         f"Install: `cargo add zplugin@{version} --features std,macros,hot-reload`.\n\n"

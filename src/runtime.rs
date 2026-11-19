@@ -173,11 +173,11 @@ impl Plugin {
         assert!(self.same_image(other));
         // SAFETY: the other owner still holds the same OS image. This only balances
         // the extra loader reference and cannot run its final unload/destructors.
-        if let Some(mut library) = self.library.take() {
-            if unsafe { library.close() }.is_err() {
-                // Retain accounting for a loader reference that could not close.
-                other.pin();
-            }
+        if let Some(mut library) = self.library.take()
+            && unsafe { library.close() }.is_err()
+        {
+            // Retain accounting for a loader reference that could not close.
+            other.pin();
         }
     }
 

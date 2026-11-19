@@ -250,15 +250,15 @@ impl Fixture {
             unsigned(start + imported_functions, &mut bytes);
             section(8, bytes, &mut module);
         }
-        if let Some(table) = &self.table {
-            if !table.elements.is_empty() {
-                let mut bytes = vec![1, 0, 0x41, 0, 0x0b];
-                unsigned(table.elements.len() as u32, &mut bytes);
-                for function in &table.elements {
-                    unsigned(*function + imported_functions, &mut bytes);
-                }
-                section(9, bytes, &mut module);
+        if let Some(table) = &self.table
+            && !table.elements.is_empty()
+        {
+            let mut bytes = vec![1, 0, 0x41, 0, 0x0b];
+            unsigned(table.elements.len() as u32, &mut bytes);
+            for function in &table.elements {
+                unsigned(*function + imported_functions, &mut bytes);
             }
+            section(9, bytes, &mut module);
         }
         let mut code = Vec::new();
         unsigned(self.functions.len() as u32, &mut code);

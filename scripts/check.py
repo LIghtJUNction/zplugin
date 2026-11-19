@@ -22,11 +22,13 @@ WASM_FEATURES = ["wasm", "wasm,std", "wasm,macros", "wasm,hot-reload"]
 
 
 def feature_selection(rustc_version, native_only=False):
-    """Wasm's engine needs Rust 1.86; native callers retain the 1.85 MSRV."""
+    """Every configuration shares the Rust 1.95 baseline required by zsys."""
     version = re.search(r"(?m)^release: (\d+)\.(\d+)\.(\d+)", rustc_version)
     if version is None:
         raise ValueError("rustc -Vv did not contain a release version")
-    wasm = not native_only and tuple(map(int, version.groups())) >= (1, 86, 0)
+    if tuple(map(int, version.groups())) < (1, 95, 0):
+        raise ValueError("zplugin requires Rust 1.95 or newer")
+    wasm = not native_only
     flags = ["--all-features"] if wasm else ["--features", "std,macros,hot-reload"]
     return flags, NATIVE_FEATURES + (WASM_FEATURES if wasm else []), wasm
 
@@ -100,7 +102,7 @@ def cross_version():
     output = ROOT / "target/cross-version"
     output.mkdir(parents=True, exist_ok=True)
     stable = os.environ.get("ZPLUGIN_STABLE_TOOLCHAIN", "stable")
-    versions = ["1.85.0", stable]
+    versions = ["1.95.0", stable]
     for index, compiler in enumerate(versions):
         build_plugin(output / ("plugin-" + str(index)), output / ("plugin-" + str(index) + EXT),
                      toolchain=compiler, release=index == 1)
@@ -133,8 +135,9 @@ def main():
     run("cargo", "test", "--locked", "-p", "zplugin", "--no-default-features")
     tree = run("cargo", "tree", "--locked", "-p", "zplugin", "--no-default-features",
                "--edges", "normal", "--prefix", "none", capture=True)
-    if len(tree.strip().splitlines()) != 1:
-        raise SystemExit("default runtime unexpectedly contains dependencies:\n" + tree)
+    packages = [line.split()[0] for line in tree.strip().splitlines()]
+    if packages != ["zplugin", "zsys"]:
+        raise SystemExit("default runtime must contain only zplugin and Project Z zsys:\n" + tree)
     for features in configurations:
         command = ["cargo", "check", "--locked", "-p", "zplugin", "--no-default-features"]
         if features:
@@ -147,7 +150,8 @@ def main():
     evidence = {"platform": platform.platform(), "rustc": compiler,
                 "compile_fail_cases": ui, "feature_configurations": len(configurations),
                 "wasm_enabled": wasm,
-                "default_runtime_dependency_count": 0,
+                "default_runtime_dependency_count": 1,
+                "default_third_party_runtime_dependency_count": 0,
                 "elapsed_seconds": round(time.monotonic() - START, 2), "result": "pass"}
     artifact = ROOT / ("artifacts/check-" + LABEL + ".json")
     artifact.parent.mkdir(exist_ok=True)

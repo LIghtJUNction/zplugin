@@ -10,14 +10,14 @@ import check
 
 
 class FeatureSelectionTests(unittest.TestCase):
-    def test_native_msrv_does_not_enable_wasm_engine(self):
-        flags, configurations, wasm = check.feature_selection("rustc 1.85.0\nrelease: 1.85.0\n")
-        self.assertEqual(flags, ["--features", "std,macros,hot-reload"])
-        self.assertEqual(len(configurations), 8)
-        self.assertFalse(wasm)
+    def test_older_compilers_are_rejected(self):
+        for version in ["1.85.0", "1.86.0", "1.94.0"]:
+            with self.subTest(version=version):
+                with self.assertRaisesRegex(ValueError, "Rust 1.95"):
+                    check.feature_selection("release: " + version)
 
     def test_wasm_msrv_and_stable_cover_all_features(self):
-        for release in ["1.86.0", "1.100.0", "1.101.0-nightly"]:
+        for release in ["1.95.0", "1.100.0", "1.101.0-nightly"]:
             with self.subTest(release=release):
                 flags, configurations, wasm = check.feature_selection("release: " + release)
                 self.assertEqual(flags, ["--all-features"])

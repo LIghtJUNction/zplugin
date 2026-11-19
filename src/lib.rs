@@ -8,7 +8,8 @@
 //! `std` for path conveniences and panic containment, and `hot-reload` for generations.
 //! Native loading is unsafe: native code must obey ABI and ownership contracts.
 //! The separate `wasm` feature provides an import-free, fuel-metered sandbox for
-//! untrusted WebAssembly, with an optional Wasmi runtime dependency (Rust 1.86+).
+//! untrusted WebAssembly, with an optional Wasmi runtime dependency. All features
+//! require Rust 1.95; the native system loader is shared through Project Z zsys.
 //! `wasm_guest` and `export_wasm!` are allocator-free and need no engine feature.
 
 #[cfg(feature = "alloc")]

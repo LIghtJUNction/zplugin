@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1] - 2026-11-20
+
+- Share Linux/macOS/Windows dynamic loading through Project Z `zsys 0.1.1`, with no third-party native runtime dependencies.
+- Preserve the v1 C ABI, pinned library lifetime, error mapping and cooperative close semantics.
+- Align the native, Wasm host and guest compiler baseline with zsys at Rust 1.95.
+
 ## [0.3.0] - 2026-11-13
 
 - Add an opt-in Wasmi 2.0 sandbox for untrusted binary Wasm32 plugins, with safe

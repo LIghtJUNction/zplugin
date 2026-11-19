@@ -6,6 +6,10 @@ annotated tag atomically, publishes `zplugin-macros` before `zplugin`, verifies
 each registry checksum, and creates the GitHub Release in the same workflow.
 A tag is never moved and an existing registry version is never overwritten.
 
+The shared native loader requires `zsys =0.1.1`. Publish and verify that upstream
+version before preparing a standalone zplugin release; Cargo must resolve the
+registry package without a local Project Z patch configuration.
+
 ## Start a release
 
 Open **Actions → Release → Run workflow**, select `main`, and choose:
@@ -60,9 +64,9 @@ protocol targets and independently compiled host/plugin toolchains. The stable
 jobs use Cargo's multi-package package verification and publish dry-run so the
 normalized archives can resolve the as-yet-unpublished macro crate.
 Stable native runners also execute independently compiled Wasm guests. A separate
-Rust 1.86 job checks the optional engine's MSRV, allocator-enabled no_std embedded
+Rust 1.95 job checks the shared compiler baseline, allocator-enabled no_std embedded
 build, malicious-module contracts, feature unification, and cross-compiler guest
-compatibility. Native/default Rust 1.85 coverage remains separate.
+compatibility. Native/default coverage uses the same Rust 1.95 baseline.
 
 The package audit checks crate identity, version, clean Git provenance and the
 absence of path/Git dependencies in the normalized manifest. It records a

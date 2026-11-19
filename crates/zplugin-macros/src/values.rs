@@ -70,16 +70,15 @@ pub(super) fn value_type(ty: &Type) -> syn::Result<Tokens> {
 
 pub(super) fn nested_type(ty: &Type) -> syn::Result<Tokens> {
     let checked = value_type(ty)?;
-    if let Type::Path(path) = ty {
-        if path.path.leading_colon.is_none()
-            && path
-                .path
-                .segments
-                .first()
-                .is_some_and(|s| s.ident == "super" || s.ident == "self")
-        {
-            return Ok(quote!(super::#ty));
-        }
+    if let Type::Path(path) = ty
+        && path.path.leading_colon.is_none()
+        && path
+            .path
+            .segments
+            .first()
+            .is_some_and(|s| s.ident == "super" || s.ident == "self")
+    {
+        return Ok(quote!(super::#ty));
     }
     Ok(checked)
 }

@@ -14,8 +14,8 @@ network, environment variable, clock, process or WASI API is linked. An interfac
 ID is a compatibility label, not proof of identity or permission.
 
 The `wasm` feature is optional and implies `alloc`, not `std`. Native/default
-features retain their zero-third-party-runtime dependency policy and Rust 1.85
-MSRV. The Wasm host uses Rust 1.86+ and Wasmi 2.0.0 with `default-features = false`
+features retain their zero-third-party-runtime dependency policy and share the
+Project Z zsys loader. All configurations require Rust 1.95. The Wasm host uses Wasmi 2.0.0 with `default-features = false`
 and explicit `stable`, `validate`, `portable-dispatch`, and `libm`. Its locked
 runtime graph adds eight packages: Wasmi, wasmi_core, wasmi_ir,
 wasmi_collections, wasmparser, spin, libm, and bitflags. No JIT compiler, text

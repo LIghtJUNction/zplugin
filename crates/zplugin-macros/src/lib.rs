@@ -100,10 +100,11 @@ enum WireType {
 
 impl WireType {
     fn parse(ty: &Type, output: bool) -> syn::Result<Self> {
-        if let Type::Tuple(tuple) = ty {
-            if output && tuple.elems.is_empty() {
-                return Ok(Self::Unit);
-            }
+        if let Type::Tuple(tuple) = ty
+            && output
+            && tuple.elems.is_empty()
+        {
+            return Ok(Self::Unit);
         }
         if let Type::Path(path) = ty {
             if path.qself.is_none()
@@ -127,15 +128,13 @@ impl WireType {
             if output && named_generic(path, "OwnedTask") {
                 if let PathArguments::AngleBracketed(arguments) =
                     &path.path.segments.last().unwrap().arguments
+                    && arguments.args.len() == 1
+                    && let GenericArgument::Type(value) = &arguments.args[0]
                 {
-                    if arguments.args.len() == 1 {
-                        if let GenericArgument::Type(value) = &arguments.args[0] {
-                            if !matches!(value, Type::Tuple(tuple) if tuple.elems.is_empty()) {
-                                values::value_type(value)?;
-                            }
-                            return Ok(Self::Task(value.clone()));
-                        }
+                    if !matches!(value, Type::Tuple(tuple) if tuple.elems.is_empty()) {
+                        values::value_type(value)?;
                     }
+                    return Ok(Self::Task(value.clone()));
                 }
                 return Err(Error::new_spanned(
                     ty,
@@ -145,12 +144,10 @@ impl WireType {
             if !output && named_generic(path, "CallbackRef") {
                 if let PathArguments::AngleBracketed(arguments) =
                     &path.path.segments.last().unwrap().arguments
+                    && arguments.args.len() == 1
+                    && matches!(&arguments.args[0], GenericArgument::Lifetime(lifetime) if lifetime.ident == "_")
                 {
-                    if arguments.args.len() == 1
-                        && matches!(&arguments.args[0], GenericArgument::Lifetime(lifetime) if lifetime.ident == "_")
-                    {
-                        return Ok(Self::Callback);
-                    }
+                    return Ok(Self::Callback);
                 }
                 return Err(Error::new_spanned(
                     ty,
@@ -176,27 +173,25 @@ impl WireType {
                 return Ok(Self::Value(ty.clone()));
             }
         }
-        if !output {
-            if let Type::Reference(reference) = ty {
-                if reference.lifetime.is_some() {
-                    return Err(Error::new_spanned(
-                        ty,
-                        "explicit boundary lifetimes are unsupported; inputs live for the current call",
-                    ));
+        if !output && let Type::Reference(reference) = ty {
+            if reference.lifetime.is_some() {
+                return Err(Error::new_spanned(
+                    ty,
+                    "explicit boundary lifetimes are unsupported; inputs live for the current call",
+                ));
+            }
+            match reference.elem.as_ref() {
+                Type::Slice(slice) if is_primitive(&slice.elem, "u8") => {
+                    return Ok(if reference.mutability.is_some() {
+                        Self::BytesMut
+                    } else {
+                        Self::Bytes
+                    });
                 }
-                match reference.elem.as_ref() {
-                    Type::Slice(slice) if is_primitive(&slice.elem, "u8") => {
-                        return Ok(if reference.mutability.is_some() {
-                            Self::BytesMut
-                        } else {
-                            Self::Bytes
-                        });
-                    }
-                    inner if is_primitive(inner, "str") && reference.mutability.is_none() => {
-                        return Ok(Self::Str);
-                    }
-                    _ => {}
+                inner if is_primitive(inner, "str") && reference.mutability.is_none() => {
+                    return Ok(Self::Str);
                 }
+                _ => {}
             }
         }
         Err(Error::new_spanned(
