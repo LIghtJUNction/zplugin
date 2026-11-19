@@ -24,6 +24,28 @@ def run(*command, toolchain=None, capture=False):
     return result.stdout.strip() if capture else ""
 
 
+def sdk_artifacts(messages):
+    """Resolve the SDK and transitive Rust libraries from Cargo's artifact stream."""
+    sdk = None
+    directories = set()
+    for line in messages.splitlines():
+        message = json.loads(line)
+        if message.get("reason") != "compiler-artifact":
+            continue
+        for filename in message["filenames"]:
+            path = Path(filename)
+            if path.suffix not in {".rlib", ".rmeta"}:
+                continue
+            directories.add(path.parent)
+            if message["target"]["name"] == "zplugin" and path.suffix == ".rlib":
+                if sdk is not None and sdk != path:
+                    raise ValueError("Cargo reported multiple zplugin SDK libraries")
+                sdk = path
+    if sdk is None:
+        raise ValueError("Cargo did not report the zplugin SDK library")
+    return sdk, sorted(directories, key=str)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--guest-toolchain", help="independently select the guest compiler")
@@ -38,19 +60,20 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     guest = output / "demo.wasm"
     sdk_target = output / "sdk-build"
-    sdk = sdk_target / "wasm32-unknown-unknown" / "release"
     guest_rust = run("rustc", "-Vv", toolchain=options.guest_toolchain, capture=True)
     host_rust = run("rustc", "-Vv", toolchain=options.host_toolchain, capture=True)
     run("rustfmt", "--edition=2024", "--check", ROOT / "examples/wasm/guest.rs",
         toolchain=options.guest_toolchain)
-    run("cargo", "build", "--locked", "--release", "-p", "zplugin", "--lib",
-        "--no-default-features", "--target=wasm32-unknown-unknown", "--target-dir", sdk_target,
-        toolchain=options.guest_toolchain)
+    messages = run("cargo", "build", "--locked", "--release", "-p", "zplugin", "--lib",
+                   "--no-default-features", "--target=wasm32-unknown-unknown", "--target-dir", sdk_target,
+                   "--message-format=json", toolchain=options.guest_toolchain, capture=True)
+    sdk, dependencies = sdk_artifacts(messages)
+    # Cargo may place dependencies in per-package build directories instead of deps/.
+    search_paths = [argument for path in dependencies for argument in ("-L", "dependency=" + str(path))]
     run("rustc", "--edition=2024", "--crate-type=cdylib", "--crate-name=zplugin_wasm_demo",
         "--target=wasm32-unknown-unknown", "-Copt-level=3", "-Cpanic=abort",
         "-Ccodegen-units=1", "-Clto=thin", "-Clink-arg=-zstack-size=65536",
-        "--extern", "zplugin=" + str(sdk / "libzplugin.rlib"),
-        "-L", "dependency=" + str(sdk / "deps"),
+        "--extern", "zplugin=" + str(sdk), *search_paths,
         ROOT / "examples/wasm/guest.rs", "-o", guest,
         toolchain=options.guest_toolchain)
     host_output = run("cargo", "run", "--locked", "--release", "-p", "zplugin", "--example", "wasm_host",
