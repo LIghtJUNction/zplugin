@@ -223,5 +223,4 @@ dependencies = [
 [[package]]
 name = "zsys"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "929d282f08df7fbe2456414924e126a29dfde04e93eb2515721b596404610548"
+source = "git+https://github.com/LIghtJUNction/zsys.git#808fcfdb73584ca7ca122e20b76f0209f56ab0f7"
