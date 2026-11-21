@@ -34,7 +34,7 @@ hot-reload = ["alloc"]
 wasm = ["alloc", "dep:wasmi"]
 
 [dependencies]
-zsys = { version = "=0.1.1", default-features = false, features = ["dylib"], git = "https://github.com/LIghtJUNction/zsys.git"}
+zsys = { default-features = false, features = ["dylib"], git = "https://github.com/LIghtJUNction/zsys.git"}
 zplugin-macros = { path = "crates/zplugin-macros", version = "=0.3.1", optional = true }
 wasmi = { version = "=2.0.0", default-features = false, features = ["stable", "validate", "portable-dispatch", "libm"], optional = true }
 
