@@ -20,7 +20,7 @@ class PackageProjectionTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.previous = Path.cwd()
-        self.root = Path(self.directory.name) / "source"
+        self.root = Path(self.directory.name).resolve() / "source"
         self.root.mkdir()
         os.chdir(self.root)
         self.git("init", "-q", "-b", "main")

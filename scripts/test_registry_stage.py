@@ -4,7 +4,6 @@ import io
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -173,7 +172,7 @@ features = ["dylib"]
 class StageTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name) / "source"
+        self.root = Path(self.temp.name).resolve() / "source"
         self.root.mkdir()
         self.git("init", "-q", "-b", "main")
         self.git("config", "user.name", "Test")
@@ -206,7 +205,8 @@ class StageTests(unittest.TestCase):
         self.assertEqual(self.git("status", "--porcelain"), "")
         for path, value in self.original.items():
             self.assertEqual((self.root / path).read_bytes(), value)
-        shutil.rmtree(self.root / stage.STAGE)
+        # Move the first clone aside so TemporaryDirectory handles read-only Git objects.
+        (self.root / stage.STAGE).rename(self.root.parent / "first-registry-stage")
         (self.root / stage.RECEIPT).unlink()
         (self.root / stage.PATCH).unlink()
         self.assertEqual(self.prepare(), first)
