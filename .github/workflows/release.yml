@@ -111,6 +111,8 @@ jobs:
           path: |
             target/release-state.json
             target/release-packages.json
+            target/release-projection.json
+            target/release-projection.patch
             target/release-notes.md
             target/package/*.crate
           if-no-files-found: ignore
