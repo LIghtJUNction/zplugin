@@ -91,8 +91,9 @@ unknown release path cannot safely be invoked.
 | `cancel(context)` | Idempotent on completed/cancelled tasks; success stops future polling; Busy retains ownership for retry |
 | `release(context)` | Consumes the one task owner, cancels/destroys remaining state; return only after required cleanup |
 
-State and status are separate, so application error 1 cannot be confused with
-Pending. Generated Rust adapters preserve the output on error. Re-polling a
+The host checks the returned status before reading `state`. Status `1` is
+application error `PluginStatus(1)` even when `*state` is `ZP_READY` (also `1`).
+Generated Rust adapters preserve the output on error. Re-polling a
 completed task returns `Completed`; a cancelled task returns `Cancelled`; a
 task whose poll panicked becomes `Poisoned`. The independent factory remains
 usable. A failed release retains its library, with no timeout-forced unloading.
