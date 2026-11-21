@@ -97,7 +97,11 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verification-${{ matrix.os }}-${{ matrix.rust }}-${{ github.run_attempt }}
-          path: artifacts/*.json
+          path: |
+            artifacts/*.json
+            target/release-packages.json
+            target/release-projection.json
+            target/release-projection.patch
           if-no-files-found: ignore
           retention-days: 30
 
