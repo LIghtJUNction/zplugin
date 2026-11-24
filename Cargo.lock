@@ -223,4 +223,4 @@ dependencies = [
 [[package]]
 name = "zsys"
 version = "0.1.1"
-source = "git+https://github.com/LIghtJUNction/zsys.git#48c4cafaf940fd7a404b885adefd2e1201b51881"
+source = "git+https://github.com/LIghtJUNction/zsys.git#44dbc7f57ad2ba3336b95dde51f4a24005ea8d68"
