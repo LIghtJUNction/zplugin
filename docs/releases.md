@@ -6,9 +6,51 @@ annotated tag atomically, publishes `zplugin-macros` before `zplugin`, verifies
 each registry checksum, and creates the GitHub Release in the same workflow.
 A tag is never moved and an existing registry version is never overwritten.
 
-The shared native loader requires `zsys =0.1.1`. Publish and verify that upstream
-version before preparing a standalone zplugin release; Cargo must resolve the
-registry package without a local Project Z patch configuration.
+Development uses the Git-only `zsys` source recorded in `Cargo.lock`. External
+publication uses the exact package version from that committed Git entry
+(currently `zsys =0.1.1`). That version must already exist on crates.io with the
+matching repository, checksum and non-yanked sparse-index record. The release
+does not silently select a newer registry version or add a local Project Z patch.
+
+## Development and registry identities
+
+`scripts/registry_stage.py` creates a separate clone at
+`target/registry-stage`. Only that clone receives registry dependency locations.
+The development candidate, its Cargo files, and its version/tag transaction
+retain their Git sources. Same-repository path dependencies keep their exact
+workspace version requirements.
+
+The projection reads committed manifests and the committed lockfile. Each Git
+package must have a unique name/version/source tuple and a full commit. The
+helper replaces supported Git-only locations with `version = "=<locked version>"`
+and maps the matching lock entries to crates.io with their verified checksums.
+Aliases, features, optional flags, target tables and workspace inheritance remain
+unchanged. Extra location selectors, patches, source collisions and ambiguous
+locks fail rather than being silently relaxed. A transitive Git lock entry must
+also have a matching registry version. Cargo still runs with `--locked`; a
+different registry dependency graph requires an explicit source/lock correction.
+
+The clone creates a deterministic local commit whose sole parent is the
+development candidate. It has no push remote. This **projection commit** is the
+clean HEAD recorded by `.cargo_vcs_info.json`; it is not the commit tagged or
+pushed to `main`. The two dependency sources need not contain identical code.
+The development matrix and registry package verification are separate evidence.
+
+`target/release-projection.json` records both commits and trees, both lock
+hashes, each Git-to-registry tuple and each changed file. Its companion
+`release-projection.patch` records the exact text delta. Both are retained in
+validation and publication artifacts, so the local commit can be reconstructed
+from the development commit without publishing a registry-only branch. Archive
+records also contain their own SHA-256, normalized lock hash and both source
+identities. A dirty stage, changed developer HEAD, changed registry checksum or
+yanked version prevents reuse.
+
+The standard-library helper takes injected `api(path)` and
+`index_version(name, version)` readers. `project(...)` is a pure text transform;
+`prepare(...)` constructs the local Git stage; `load(...)` checks it again
+before archives are reused. None of these helpers invokes Cargo or publishes
+refs. The release entry point performs the existing package and publish
+commands from the validated stage with an explicit target directory.
 
 ## Start a release
 
@@ -61,7 +103,8 @@ selected source, version and source timestamp. A mismatch rejects the release.
 The matrix runs the real host/plugin tests on Linux, macOS and Windows with
 stable Rust and the declared MSRV. The portability job checks allocator-free
 protocol targets and independently compiled host/plugin toolchains. The stable
-jobs use Cargo's multi-package package verification and publish dry-run so the
+jobs use Cargo's multi-package package verification and publish dry-run from the
+clean registry projection so the
 normalized archives can resolve the as-yet-unpublished macro crate.
 Stable native runners also execute independently compiled Wasm guests. A separate
 Rust 1.95 job checks the shared compiler baseline, allocator-enabled no_std embedded
@@ -69,11 +112,13 @@ build, malicious-module contracts, feature unification, and cross-compiler guest
 compatibility. Native/default coverage uses the same Rust 1.95 baseline.
 
 The package audit checks crate identity, version, clean Git provenance and the
-absence of path/Git dependencies in the normalized manifest. It records a
+absence of path/Git dependencies in all normalized dependency tables. It checks
+that the original packaged manifest equals its stage source and that projected
+lock identities retain the verified registry checksums. It records a
 SHA-256 hash for each final archive. Before the atomic ref push, the workflow
 checks that `main` has not advanced and that the crate names still belong to
-this project. Package verification is repeated on the exact final candidate in
-the publication job. Registry publication succeeds only when the uploaded bytes
+this project. The publication job reconstructs and checks the registry projection
+of that exact development candidate and repeats package verification. Registry publication succeeds only when the uploaded bytes
 match the recorded hashes and the dependency version is visible in the sparse
 index.
 
@@ -86,8 +131,8 @@ linked from each GitHub Release and `docs/performance.md` for measurement scope.
 
 Crates.io publication is not atomic across multiple crates. For example, the
 macro crate may upload successfully before the runtime upload fails. The job
-preserves `target/release-state.json`, `target/release-packages.json` and the
-archives as an Actions artifact. The state names the last completed stage and
+preserves `target/release-state.json`, `target/release-packages.json`, the
+projection receipt/patch and the archives as an Actions artifact. The state names the last completed stage and
 contains hashes, never tokens.
 
 1. Read the failed step and retained release state. Fix missing credentials or
@@ -110,7 +155,8 @@ Run the regular contract suite and release failure-mode tests:
 
 ```sh
 python3 scripts/check.py
-python3 -m unittest discover -s scripts -p test_release.py -v
+python3 -m unittest discover -s scripts -p 'test_release*.py' -v
+python3 -m unittest discover -s scripts -p test_registry_stage.py -v
 ```
 
 From a clean committed checkout on stable Rust, validate the two distributable
@@ -127,12 +173,18 @@ later; the library MSRV remains independent of the release tooling version.
 The release script tests create disposable local Git repositories and cover
 reproducible candidates, preservation of external dependency pins, dirty source,
 concurrent branch updates, foreign tags, registry ownership, immutable checksum
-matching, malformed inputs and missing publication credentials.
+matching, malformed inputs and missing publication credentials. The projection
+fixtures use Python, disposable local Git repositories, synthetic archives and
+mock registry responses; they do not establish live registry availability or
+replace the actual Cargo/package/platform gates.
 
 ## Tooling references
 
 Cargo's [multi-package publishing release note](https://blog.rust-lang.org/2025/09/18/Rust-1.90.0/)
 and [`cargo package` reference](https://doc.rust-lang.org/cargo/commands/cargo-package.html)
 describe the package ordering and normalization used by the release tooling.
+Cargo's [dependency locations](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#multiple-locations)
+explain the development-versus-registry distinction. The projection does not
+claim a development Git commit is the registry crate's source.
 The workflow and script tests are the evidence for zplugin's additional commit,
 owner, hash and recovery checks.

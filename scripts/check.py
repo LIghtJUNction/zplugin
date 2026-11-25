@@ -66,6 +66,9 @@ def compile_fail():
         '[package]\nname="zplugin-ui-case"\nversion="0.0.0"\nedition="2024"\n'
         '[workspace]\n[dependencies]\nzplugin={path=' + json.dumps(str(ROOT)) +
         ',features=["macros","std"]}\n', encoding="utf-8")
+    # Seed the standalone workspace with the Git revisions already fetched by
+    # the locked workspace checks. Cargo prunes entries unused by the fixture.
+    shutil.copyfile(ROOT / "Cargo.lock", case_dir / "Cargo.lock")
     fixtures = sorted((ROOT / "crates/zplugin-macros/tests/ui").glob("*.rs"))
     fixtures += sorted((ROOT / "tests/ui").glob("*.rs"))
     for path in fixtures:
