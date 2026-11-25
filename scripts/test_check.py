@@ -45,12 +45,17 @@ class EncodingTests(unittest.TestCase):
     def test_compile_fail_reads_non_ascii_diagnostic(self):
         real_run = subprocess.run
 
-        def compiler(_command, **kwargs):
+        def compiler(command, **kwargs):
+            manifest = Path(command[command.index("--manifest-path") + 1])
+            self.assertEqual(manifest.with_name("Cargo.lock").read_bytes(), lock)
+            self.assertIn("--offline", command)
             code = "import sys; sys.stdout.buffer.write('字段: unsupported field'.encode('utf-8')); sys.exit(1)"
             return real_run([sys.executable, "-c", code], **kwargs)
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            lock = b"version = 4\n"
+            (root / "Cargo.lock").write_bytes(lock)
             fixtures = root / "tests/ui"
             fixtures.mkdir(parents=True)
             (fixtures / "unicode.rs").write_text("// error: unsupported field\nfn main() {}\n", encoding="utf-8")
